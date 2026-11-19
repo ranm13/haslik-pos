@@ -1,0 +1,16 @@
+# Original legacy files contain real PINs and emails. Never commit them.
+# A scrubbed copy lives in backend/legacy/.
+old_app_script_files/
+
+node_modules/
+dist/
+coverage/
+*.log
+
+# Local secrets (staging PINs, device tokens, bootstrap secret)
+.env
+.env.*
+!.env.example
+backend/.clasp.json
+backend/src/generated/
+.secrets/

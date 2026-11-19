@@ -1,0 +1,30 @@
+# Decisions log (for review)
+
+Decisions taken while working unattended through stages 0–4. The user pre-approved these on staging (2026-11-19). Anything that would touch production is listed under **Pending for the user** instead.
+
+| # | Date | Stage | Decision | Why | Reversible? |
+|---|---|---|---|---|---|
+| D1 | 2026-11-19 | 0 | Staging is a **new** spreadsheet + bound script in the dedicated account, seeded with fictitious data. Not a copy of production | No real names on staging; production untouched | yes |
+| D2 | 2026-11-19 | 0 | Docs are in English (sheet/column names stay Hebrew); ROADMAP stays Hebrew | precision for code contracts | yes |
+| D3 | 2026-11-19 | 0 | Backend written in TypeScript, bundled by esbuild into one `Code.js` for Apps Script. Pure logic in `backend/src/core` (no Google APIs) so Vitest runs it in Node | ROADMAP §2.6 | yes |
+| D4 | 2026-11-19 | 1 | Web app access is `ANYONE_ANONYMOUS` (legacy used `ANYONE`, which requires a Google sign-in and breaks `fetch` from GitHub Pages) | required for the static frontend | yes |
+| D5 | 2026-11-19 | 1 | Legacy sheets keep shekel amounts; code converts to integer agorot at the sheet boundary. New sheets store agorot | stage 1 must stay 1:1 with existing sheets and reports | yes |
+| D6 | 2026-11-19 | 1 | Auth = device token + PIN on every request (bar/admin PIN, salted SHA-256 in Script Properties). No staff names yet (`Staff` sheet is later) | ROADMAP stage 1 infra; minimal change from legacy | yes |
+| D7 | 2026-11-19 | 1 | "Owner email = admin without PIN" dropped | anonymous API has no identity | yes |
+| D8 | 2026-11-19 | 1 | PIN lockout per device (10 / 10 min) instead of global (15) | one bad device shouldn't lock the bar | yes |
+| D9 | 2026-11-19 | 1 | One-time `admin.bootstrap` action protected by a random secret compiled into the pushed bundle (never committed). Used to configure staging without editor clicks | unattended setup | yes |
+| D10 | 2026-11-19 | 1 | `Audit` sheet added already in stage 1; every write logs one row | ROADMAP §8 rule | yes |
+| D11 | 2026-11-19 | 2 | Existing `יומן מכירות` rows are **not** edited; new column `מזהה חבר` is filled for new rows only; old rows resolve through `LegacyKeyMap` | history stays untouched | yes |
+| D12 | 2026-11-19 | 2 | Guests become `Members` rows (`source=GUEST`) on first sale; merge = `status=merged` + `mergedInto` | ROADMAP rule 8 | yes |
+| D13 | 2026-11-19 | 2 | External renames can't be detected automatically (key = name). Sync preview suggests pairs (same last or first name) and the admin confirms | no stable id in the external list | yes |
+| D14 | 2026-11-19 | 3 | Expense type stored in new column 11 `סוג`; blank = `הוצאה`; backfill action writes `הוצאה` into blanks | ROADMAP stage 3 migration | yes |
+| D15 | 2026-11-19 | 4 | Placeholder catalog seeded on staging; user replaces with the real one | user choice | yes |
+
+## Pending for the user
+| # | Item | Needed before |
+|---|---|---|
+| U1 | One-time "Allow" (OAuth consent) on the staging script | integration tests on staging |
+| U2 | Real product catalog and prices | production stage 4 |
+| U3 | Budget-office report format (open decision #7) | stage 5 |
+| U4 | Tablet manual checklist (`docs/TABLET_CHECKLIST.md`) | production cutover |
+| U5 | Production cutover: deploy new backend to the production spreadsheet (after the account move), set new PINs, register the bar tablet | after review |
