@@ -2,7 +2,7 @@
  * Members & identity (stage 2). Pure functions: the Apps Script layer reads rows,
  * calls these, and writes back the returned operations.
  */
-import type { SyncApplyInput, SyncCandidate, SyncPreview } from '../../../shared/api';
+import type { SyncApplyInput, SyncCandidate, SyncPreview } from '../shared/api';
 import { fail, invalid } from './errors';
 import { cleanText, nextSequentialId } from './text';
 import { guestKey, memberKey } from './sales';

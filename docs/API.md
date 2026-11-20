@@ -10,7 +10,7 @@ One endpoint: `POST <webapp URL>`, body is a JSON **string** sent as `Content-Ty
 { "ok": true, "data": { … } }
 { "ok": false, "error": { "code": "VALIDATION", "message": "כמות לא תקינה" } }
 ```
-`message` is Hebrew and safe to show to the bartender. Types: `shared/api.ts`.
+`message` is Hebrew and safe to show to the bartender. Types: `src/shared/api.ts`.
 
 ## Error codes
 | Code | Meaning | Client reaction |

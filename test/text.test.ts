@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { asText, cleanText, fromText, nextSequentialId } from '../src/core/text';
-import { matchesQuery, normalizeSearch } from '../../shared/search';
+import { matchesQuery, normalizeSearch } from '../src/shared/search';
 
 describe('T1 sheet text safety', () => {
   it('prefixes with an apostrophe so formulas are never evaluated', () => {

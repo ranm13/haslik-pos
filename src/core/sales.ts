@@ -1,5 +1,5 @@
-import type { Role, SaleInput } from '../../../shared/api';
-import type { Agorot } from '../../../shared/money';
+import type { Role, SaleInput } from '../shared/api';
+import type { Agorot } from '../shared/money';
 import { invalid } from './errors';
 import { cleanText } from './text';
 

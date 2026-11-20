@@ -1,4 +1,4 @@
-import type { Role } from '../../../shared/api';
+import type { Role } from '../shared/api';
 import { invalid } from './errors';
 
 /** SHA-256 → base64, injected (Utilities.computeDigest in GAS, node:crypto in tests). */

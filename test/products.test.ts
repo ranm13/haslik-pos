@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Product, ProductInput } from '../../shared/api';
+import type { Product, ProductInput } from '../src/shared/api';
 import { PLACEHOLDER_CATALOG, planUpsert, sortProducts } from '../src/core/products';
 import { he } from './helpers';
 

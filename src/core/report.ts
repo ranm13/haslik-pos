@@ -2,8 +2,8 @@
  * Pure aggregation for the monthly report (same layout as legacy Report.gs).
  * The Apps Script layer only writes these numbers into the report spreadsheet.
  */
-import type { ExpenseType } from '../../../shared/api';
-import type { Agorot } from '../../../shared/money';
+import type { ExpenseType } from '../shared/api';
+import type { Agorot } from '../shared/money';
 import { expenseTotals, type ExpenseTotals } from './expenses';
 
 export interface ReportSale {

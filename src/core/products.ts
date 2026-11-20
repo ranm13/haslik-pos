@@ -1,5 +1,5 @@
-import type { Product, ProductInput } from '../../../shared/api';
-import { isAgorot } from '../../../shared/money';
+import type { Product, ProductInput } from '../shared/api';
+import { isAgorot } from '../shared/money';
 import { fail, invalid } from './errors';
 import { cleanText, nextSequentialId } from './text';
 

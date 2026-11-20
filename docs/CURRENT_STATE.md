@@ -1,6 +1,6 @@
 # Current state – legacy Apps Script app
 
-Source: `backend/legacy/` (scrubbed copy; real PINs/emails replaced). ~1,800 lines across 5 `.gs` files + `Index.html`.
+Source: `legacy/` (scrubbed copy; real PINs/emails replaced). ~1,800 lines across 5 `.gs` files + `Index.html`.
 
 ## Deployment
 - Container-bound script on the "system" spreadsheet, deployed as a Web App: `executeAs: USER_DEPLOYING`, `access: ANYONE` (= any **signed-in** Google user). UI is `Index.html` served by `doGet`, calling server functions via `google.script.run`.

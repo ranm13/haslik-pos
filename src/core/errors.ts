@@ -1,4 +1,4 @@
-import type { ErrorCode } from '../../../shared/api';
+import type { ErrorCode } from '../shared/api';
 
 /** An error whose message is safe to show to the bartender (Hebrew). */
 export class AppError extends Error {

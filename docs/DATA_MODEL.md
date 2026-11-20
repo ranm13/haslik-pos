@@ -75,7 +75,7 @@ Maps every key ever written to `יומן מכירות` (`last|first`, `guest|las
 | `FINANCE_EMAILS` | bootstrap | comma separated |
 | `MEMBERS_FILE_ID`, `MEMBERS_TAB_NAME`, `MEMBERS_LAST_HEADER`, `MEMBERS_FIRST_HEADER` | bootstrap | external list |
 
-Non-secret constants (pub name, close hour 08:00, shift offset 8h, undo 30 min, max qty 20, backup retention 120 days) stay in code (`backend/src/gas/config.ts`).
+Non-secret constants (pub name, close hour 08:00, shift offset 8h, undo 30 min, max qty 20, backup retention 120 days) stay in code (`src/gas/config.ts`).
 
 ## Later stages (reference only, not built yet)
 `Transactions`, `Tags`, `StockMovements`, `Shifts`, `Staff`, `Periods` rename – see ROADMAP §3.

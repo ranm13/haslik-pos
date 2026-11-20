@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAgorot, parseShekelInput, toAgorot, toShekels } from '../../shared/money';
+import { formatAgorot, parseShekelInput, toAgorot, toShekels } from '../src/shared/money';
 
 describe('M1 sheet conversion', () => {
   it('round-trips shekel numbers exactly', () => {

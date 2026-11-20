@@ -1,5 +1,5 @@
-import type { ExpenseInput, ExpenseType } from '../../../shared/api';
-import { isAgorot, type Agorot } from '../../../shared/money';
+import type { ExpenseInput, ExpenseType } from '../shared/api';
+import { isAgorot, type Agorot } from '../shared/money';
 import { invalid } from './errors';
 import { cleanText } from './text';
 

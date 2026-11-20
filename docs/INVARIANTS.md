@@ -1,6 +1,6 @@
 # Invariants
 
-Each invariant maps to automated tests (`backend/test/*.test.ts`, run in CI with `npm test`) and, where it depends on Sheets/locking, to the staging integration script (`npm run it:staging`).
+Each invariant maps to automated tests (`test/*.test.ts`, run in CI with `npm test`) and, where it depends on Sheets/locking, to a staging integration script (not written yet).
 
 | ID | Invariant | Unit test | Integration |
 |---|---|---|---|
