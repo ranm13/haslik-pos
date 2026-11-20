@@ -1,5 +1,6 @@
 /**
- * API contract shared by backend (Apps Script) and frontend. See docs/API.md.
+ * Contract between the page (src/ui) and the server function `api(request)`,
+ * called with google.script.run. See docs/API.md.
  */
 import type { Agorot } from './money';
 
@@ -7,13 +8,13 @@ export type Role = 'bar' | 'admin';
 export type Env = 'staging' | 'production';
 
 export type ErrorCode =
-  | 'DEVICE_REQUIRED' | 'DEVICE_REVOKED' | 'PIN_REQUIRED' | 'RATE_LIMITED' | 'FORBIDDEN'
+  | 'PIN_REQUIRED' | 'RATE_LIMITED' | 'FORBIDDEN'
   | 'VALIDATION' | 'NOT_FOUND' | 'CONFLICT' | 'BUSY' | 'NOT_CONFIGURED' | 'INTERNAL';
 
 export interface ApiError { code: ErrorCode; message: string }
 export type ApiResponse<T> = { ok: true; data: T } | { ok: false; error: ApiError };
 
-export interface Auth { deviceToken?: string; pin?: string }
+export interface Auth { pin?: string }
 
 export interface ApiRequest<P = unknown> {
   action: ActionName;
@@ -74,8 +75,6 @@ export interface ExpensesState {
 
 export interface Todo { id: string; text: string; done: boolean; date: string }
 
-export interface Device { deviceId: string; name: string; active: boolean; createdAt: string; lastSeenAt: string; current: boolean }
-
 export interface Product {
   productId: string;
   name: string;
@@ -94,13 +93,11 @@ export interface InitData {
   pubName: string;
   env: Env;
   version: string;
-  deviceName: string;
   period: Period;
   cardTypes: CardType[];
   members: Member[];
   shift: ShiftState;
   todos: Todo[];
-  products: Product[];
   expenses?: ExpensesState;
   reportUrl?: string;
 }
@@ -117,13 +114,8 @@ export interface SyncResult { added: number; deactivated: number; renamed: numbe
 
 /* ---------- actions ---------- */
 
+/** Stage 1 actions. Later stages add theirs here (members sync: stage 2, products: stage 4). */
 export interface ActionMap {
-  'ping': { payload: void; result: { env: Env | 'unconfigured'; version: string; now: string } };
-  'admin.bootstrap': { payload: BootstrapPayload; result: { configured: true; log: string[] } };
-  'device.register': { payload: { name: string }; result: { deviceId: string; deviceToken: string; name: string } };
-  'device.list': { payload: void; result: Device[] };
-  'device.revoke': { payload: { deviceId: string }; result: Device[] };
-  'admin.setPins': { payload: { barPin?: string; adminPin?: string }; result: Record<string, never> };
   'session.init': { payload: void; result: InitData };
   'members.list': { payload: void; result: Member[] };
   'shift.get': { payload: void; result: ShiftState };
@@ -132,21 +124,11 @@ export interface ActionMap {
   'expense.list': { payload: void; result: ExpensesState };
   'expense.create': { payload: ExpenseInput; result: ExpensesState };
   'expense.void': { payload: { expenseId: string }; result: ExpensesState };
-  'expense.backfillType': { payload: void; result: { updated: number } };
   'report.refresh': { payload: void; result: { url: string } };
   'todo.list': { payload: void; result: Todo[] };
   'todo.create': { payload: { text: string }; result: Todo[] };
   'todo.update': { payload: { todoId: string; text?: string; done?: boolean }; result: Todo[] };
   'todo.delete': { payload: { todoId: string }; result: Todo[] };
-  'members.adminList': { payload: void; result: MemberAdmin[] };
-  'members.syncPreview': { payload: void; result: SyncPreview };
-  'members.syncApply': { payload: SyncApplyInput; result: SyncResult };
-  'members.update': { payload: { memberId: string; displayName?: string; phone?: string; status?: 'active' | 'inactive' }; result: MemberAdmin[] };
-  'members.merge': { payload: { fromId: string; intoId: string }; result: MemberAdmin[] };
-  'members.mapLegacy': { payload: void; result: { mapped: number; created: number; total: number } };
-  'product.list': { payload: void; result: Product[] };
-  'product.upsert': { payload: ProductInput; result: Product[] };
-  'product.seedPlaceholder': { payload: void; result: Product[] };
 }
 export type ActionName = keyof ActionMap;
 
@@ -166,24 +148,7 @@ export interface SyncApplyInput {
   renames: { memberId: string; externalKey: string }[];
 }
 
-export interface BootstrapPayload {
-  secret: string;
-  env: Env;
-  masterId: string;
-  barPin: string;
-  adminPin: string;
-  adminEmail: string;
-  financeEmails?: string[];
-  members?: { fileId: string; tab: string; lastHeader: string; firstHeader: string };
-  seedStaging?: boolean;
-}
-
-/** Actions that need no device token / PIN. */
-export const PUBLIC_ACTIONS: readonly ActionName[] = ['ping', 'admin.bootstrap', 'device.register'];
-
-/** Actions that require the admin PIN. */
+/** Actions that require the admin role (admin PIN or the owner's Google account). */
 export const ADMIN_ACTIONS: readonly ActionName[] = [
-  'device.list', 'device.revoke', 'admin.setPins', 'expense.list', 'expense.create', 'expense.void',
-  'expense.backfillType', 'report.refresh', 'members.adminList', 'members.syncPreview', 'members.syncApply',
-  'members.update', 'members.merge', 'members.mapLegacy', 'product.upsert', 'product.seedPlaceholder',
+  'expense.list', 'expense.create', 'expense.void', 'report.refresh',
 ];

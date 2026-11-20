@@ -4,7 +4,7 @@ import { invalid } from './errors';
 /** SHA-256 → base64, injected (Utilities.computeDigest in GAS, node:crypto in tests). */
 export type Sha256 = (text: string) => string;
 
-export const MAX_PIN_FAILS = 10;
+export const MAX_PIN_FAILS = 15; // legacy value, global lockout (D23)
 export const LOCK_MINUTES = 10;
 
 export function validatePinFormat(pin: string, label: string): string {

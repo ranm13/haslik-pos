@@ -12,6 +12,15 @@ export function asText(s: unknown): string {
   return "'" + String(s == null ? '' : s);
 }
 
+/** Drive file id from a Drive/Sheets link (…/d/<id>/… or ?id=<id>) or a bare id; '' if none. */
+export function fileIdFromUrl(url: unknown): string {
+  const s = String(url == null ? '' : url).trim();
+  const m = s.match(/\/d\/([a-zA-Z0-9_-]{20,})/) || s.match(/[?&]id=([a-zA-Z0-9_-]{20,})/);
+  if (m) return m[1];
+  // a bare id: real Drive ids are 25+ chars mixing lowercase and digits (rejects placeholders like PASTE_..._HERE)
+  return /^[a-zA-Z0-9_-]{25,}$/.test(s) && /[a-z]/.test(s) && /\d/.test(s) ? s : '';
+}
+
 /** Reads a text cell value back: removes a leading apostrophe and trims. */
 export function fromText(v: unknown): string {
   return String(v == null ? '' : v).replace(/^'/, '').trim();
