@@ -10,8 +10,8 @@ Decisions taken while working unattended through stages 0–4. The user pre-appr
 | D4 | 2026-11-19 | 1 | *(superseded by D16)* Web app access is `ANYONE_ANONYMOUS` (legacy used `ANYONE`, which requires a Google sign-in and breaks `fetch` from GitHub Pages) | required for the static frontend | yes |
 | D5 | 2026-11-19 | 1 | Legacy sheets keep shekel amounts; code converts to integer agorot at the sheet boundary. New sheets store agorot | stage 1 must stay 1:1 with existing sheets and reports | yes |
 | D6 | 2026-11-19 | 1 | Auth = device token + PIN on every request (bar/admin PIN, salted SHA-256 in Script Properties). No staff names yet (`Staff` sheet is later) | ROADMAP stage 1 infra; minimal change from legacy | yes |
-| D7 | 2026-11-19 | 1 | "Owner email = admin without PIN" dropped | anonymous API has no identity | yes |
-| D8 | 2026-11-19 | 1 | PIN lockout per device (10 / 10 min) instead of global (15) | one bad device shouldn't lock the bar | yes |
+| D7 | 2026-11-19 | 1 | *(superseded by D22)* "Owner email = admin without PIN" dropped | anonymous API has no identity | yes |
+| D8 | 2026-11-19 | 1 | *(superseded by D23)* PIN lockout per device (10 / 10 min) instead of global (15) | one bad device shouldn't lock the bar | yes |
 | D9 | 2026-11-19 | 1 | *(superseded by D18)* One-time `admin.bootstrap` action protected by a random secret compiled into the pushed bundle (never committed). Used to configure staging without editor clicks | unattended setup | yes |
 | D10 | 2026-11-19 | 1 | `Audit` sheet added already in stage 1; every write logs one row | ROADMAP §8 rule | yes |
 | D11 | 2026-11-19 | 2 | Existing `יומן מכירות` rows are **not** edited; new column `מזהה חבר` is filled for new rows only; old rows resolve through `LegacyKeyMap` | history stays untouched | yes |
@@ -25,6 +25,10 @@ Decisions taken while working unattended through stages 0–4. The user pre-appr
 | D19 | 2026-11-20 | −1 | Simplified migration: "Make a copy" + legacy `setup()`. Old monthly reports stay in the private account; `Migrate.gs` removed (in git history) | fewer steps for the user; links keep working | yes |
 | D20 | 2026-11-20 | 8 | No offline queue (an Apps Script page can't run offline). Failed actions are retried with the same clientTxId | platform limit | yes |
 | D21 | 2026-11-20 | all | All docs in English; Hebrew only for sheet/column names and UI labels. ROADMAP and MIGRATION rewritten. Updates D2 | user request | yes |
+| D22 | 2026-11-20 | 1 | Web app access back to `ANYONE` (signed-in Google account), as legacy, so the **owner account = admin without PIN** works again. Supersedes D7 | 1:1 parity; the bar device is already signed in | yes |
+| D23 | 2026-11-20 | 1 | PIN lockout stays **global**, 15 wrong tries / 10 min, as legacy. Supersedes D8 (per-device needs device tokens) | user approved the default | yes |
+| D24 | 2026-11-20 | 1 | Stage 1 adds **no columns to existing sheets**: the drafted `מזהה חבר` (sales) and `סוג` (expenses) columns wait for stages 2 and 3 (D11, D14). Only new sheet: `Audit` | promise "no schema changes" in the stage 1 plan | yes |
+| D25 | 2026-11-20 | 1 | PINs are set by typing `INITIAL_BAR_PIN` / `INITIAL_ADMIN_PIN` in Script Properties and running `setup`, which hashes and deletes them. No PIN-change screen in the app (none in legacy) | no plain PINs in code; no editor code changes needed | yes |
 
 ## Pending for the user
 | # | Item | Needed before |

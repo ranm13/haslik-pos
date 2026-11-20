@@ -6,8 +6,8 @@ Status: ✅ done (on staging) · ⏳ planned · 🔁 changed · ❌ dropped (wit
 
 | # | Legacy capability | Stage | New behavior | Status |
 |---|---|---|---|---|
-| 1 | PIN login, bar/admin roles | 1 | 🔁 Device token (registered by admin) + PIN. PINs hashed in Script Properties. Lockout per device | ⏳ |
-| 2 | Owner email = admin without PIN | 1 | ❌ Dropped: the new frontend calls the API anonymously (`ANYONE_ANONYMOUS`), so there is no Google identity. Admin always uses the admin PIN | ⏳ |
+| 1 | PIN login, bar/admin roles | 1 | 🔁 Same PINs-and-roles model; PINs now salted hashes in Script Properties (set via `INITIAL_*` + `setup`), replaced on go-live day | ⏳ |
+| 2 | Owner email = admin without PIN | 1 | Kept (web app access `ANYONE`, as legacy) | ⏳ |
 | 3 | Member search (Hebrew-normalized, tokens, 40 hits) | 1 | Kept, same normalization | ⏳ |
 | 4 | Refresh member list | 1 | Kept | ⏳ |
 | 5 | Guest sale (free-text name, marked "לא ברשימה") | 1 → 2 | Kept; from stage 2 a guest becomes a `Members` row with `source=GUEST` | ⏳ |
@@ -23,11 +23,11 @@ Status: ✅ done (on staging) · ⏳ planned · 🔁 changed · ❌ dropped (wit
 | 15 | Finance viewers on reports folder | 1 | Kept (`FINANCE_EMAILS` Script Property) | ⏳ |
 | 16 | Weekly backup (Sun 04:00, 120 days) | 1 → 8 | Kept; daily in stage 8 | ⏳ |
 | 17 | Spreadsheet menu (refresh report, backup, close month, setup) | 1 | Kept | ⏳ |
-| 18 | `setup()` | 0/1 | 🔁 Replaced by `admin.bootstrap` (one-time, secret-protected) + `setup` still runnable from the menu | ⏳ |
+| 18 | `setup()` | 1 | 🔁 Kept and extended: also hashes one-time PINs, converts `MEMBERS_URL`, logs ✔/✘ per step. `seedStaging()` added for staging only | ⏳ |
 | 19 | Card types sheet (name, price, active) | 1 → 5 | Kept until the wallet replaces cards (stage 5). Products catalog (stage 4) is separate | ⏳ |
 | 20 | Members from external list, read-only, name-derived key | 2 | 🔁 App-owned `Members` with stable `memberId`; external list stays the membership source via admin-approved sync | ⏳ |
 | 21 | Reading xlsx member files | 1 | Kept | ⏳ |
 | 22 | Mobile-first UI, dark mode, RTL, paper style | 1 | Kept; plus tablet landscape layout and 48px targets | ⏳ |
 | 23 | Refresh shift when app regains focus | 1 | Kept | ⏳ |
 | 24 | Formula-injection protection (`'` prefix) | 1 | Kept | ⏳ |
-| 25 | Global PIN lockout after 15 failures | 1 | 🔁 Per device (10 failures / 10 min), so one bad device can't lock out the bar | ⏳ |
+| 25 | Global PIN lockout after 15 failures | 1 | Kept unchanged (D23) | ⏳ |

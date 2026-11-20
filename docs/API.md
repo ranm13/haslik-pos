@@ -1,71 +1,70 @@
-# JSON API (Apps Script Web App)
+# Server API (Apps Script, `google.script.run`)
 
-One endpoint: `POST <webapp URL>`, body is a JSON **string** sent as `Content-Type: text/plain;charset=utf-8` (no CORS preflight). `fetch` follows the 302 to `script.googleusercontent.com` automatically. Deployed with `executeAs: USER_DEPLOYING`, `access: ANYONE_ANONYMOUS`.
+The page (`src/ui/app.js`, served by `doGet`) calls one server function:
+
+```js
+google.script.run.withSuccessHandler(cb).api({ action, payload, auth: { pin }, clientTxId })
+```
+
+The web app is deployed with `executeAs: USER_DEPLOYING` and `access: ANYONE` (any signed-in Google account, as in the legacy app). There is no HTTP JSON endpoint (`doPost` was removed, D16).
 
 ## Envelope
 ```jsonc
 // request
-{ "action": "sale.create", "payload": { … }, "auth": { "deviceToken": "…", "pin": "…" }, "clientTxId": "uuid" }
-// response
+{ "action": "sale.create", "payload": { … }, "auth": { "pin": "…" }, "clientTxId": "uuid" }
+// response – api() never throws; failures come back as data
 { "ok": true, "data": { … } }
 { "ok": false, "error": { "code": "VALIDATION", "message": "כמות לא תקינה" } }
 ```
-`message` is Hebrew and safe to show to the bartender. Types: `src/shared/api.ts`.
+`message` is Hebrew and safe to show to the bartender. Types: `src/shared/api.ts`. Money is always integer agorot (`…Agorot` fields).
 
 ## Error codes
-| Code | Meaning | Client reaction |
+| Code | Meaning | Page reaction |
 |---|---|---|
-| `DEVICE_REQUIRED` | no / unknown device token | go to device setup |
-| `DEVICE_REVOKED` | device disabled by admin | device setup |
 | `PIN_REQUIRED` | missing or wrong PIN | PIN screen |
-| `RATE_LIMITED` | 10 wrong PINs from this device in 10 min | show message, wait |
+| `RATE_LIMITED` | 15 wrong PINs in 10 min (global, as legacy) | show message, wait |
 | `FORBIDDEN` | needs admin | message |
 | `VALIDATION` | bad input | message, keep form |
 | `NOT_FOUND`, `CONFLICT` | | message |
 | `BUSY` | lock not acquired in 25 s | retry with the **same** clientTxId |
-| `NOT_CONFIGURED` | bootstrap not done | message |
+| `NOT_CONFIGURED` | `setup` not run / PINs or members file missing | message |
 | `INTERNAL` | unexpected | retry with the same clientTxId |
 
 ## Auth
-- `device.register` needs `auth.pin` = admin PIN (no device token). Returns a 32-char random token shown once and kept in `localStorage`. Server stores only its hash.
-- Every other action (except `ping`, `admin.bootstrap`) needs a valid active device token **and** a PIN. Bar PIN → role `bar`; admin PIN → role `admin` (admin can do everything bar can).
-- Wrong PINs are counted per device token (or per "unregistered" bucket).
+- The script owner's Google account (`ADMIN_EMAIL`, default: the account that runs `setup`) is admin without a PIN – Google reveals the visitor's email to the script only for the owner.
+- Everyone else sends `auth.pin`: bar PIN → role `bar`, admin PIN → role `admin` (admin can do everything bar can).
+- PINs are stored only as salted SHA-256 hashes in Script Properties. They are set by typing `INITIAL_BAR_PIN` / `INITIAL_ADMIN_PIN` in Project Settings → Script Properties and running `setup`, which hashes them and deletes the plain values.
+- Wrong PINs are counted globally in `CacheService` (15 per 10 minutes), as in the legacy app.
 
 ## Idempotency
-Every write action takes `clientTxId`. Inside the script lock the server checks (1) `CacheService` key `tx:<clientTxId>` (6 h), then (2) the id column of the target sheet (`TextFinder`, exact match). A duplicate returns the current state without writing. The client keeps the same clientTxId across retries of the same user intent and generates a new one when the user changes the input.
+Every write action takes `clientTxId`. Inside the script lock the server checks (1) `CacheService` key `tx:<clientTxId>` (6 h), then (2) the id column of the target sheet (`TextFinder`, exact match). A duplicate returns the current state without writing. The page keeps the same clientTxId across retries of the same user intent and generates a new one when the input changes.
 
-## Actions
+## Actions (stage 1)
 
-| Action | Role | Payload | Returns | Stage |
-|---|---|---|---|---|
-| `ping` | – | – | `{env, version, now}` | 1 |
-| `admin.bootstrap` | secret | `{secret, env, masterId, barPin, adminPin, adminEmail, financeEmails?, members?: {fileId, tab, lastHeader, firstHeader}, seedStaging?}` | `{configured: true, log}` | 1 |
-| `device.register` | admin PIN | `{name}` | `{deviceId, deviceToken, name}` | 1 |
-| `device.list` | admin | – | `Device[]` | 1 |
-| `device.revoke` | admin | `{deviceId}` | `Device[]` | 1 |
-| `admin.setPins` | admin | `{barPin?, adminPin?}` | `{}` | 1 |
-| `session.init` | bar | – | `InitData` (role, pub, env, period, cardTypes, members, shift, todos; admin: expenses, reportUrl) | 1 |
-| `members.list` | bar | – | `Member[]` (fresh) | 1 |
-| `shift.get` | bar | – | `ShiftState` | 1 |
-| `sale.create` | bar | `{memberId}` or `{guest:{first,last}}`, `{cardType, qty, note?}` | `ShiftState` | 1 (memberId from 2) |
-| `sale.void` | bar | `{saleId}` | `ShiftState` | 1 |
-| `expense.list` | admin | – | `ExpensesState` | 1 |
-| `expense.create` | admin | `{date:'yyyy-MM-dd', desc, amountAgorot, type?:'EXPENSE'|'CREDIT'}` | `ExpensesState` (+ `warning`) | 1 (type from 3) |
-| `expense.void` | admin | `{expenseId}` | `ExpensesState` | 1 |
-| `report.refresh` | admin | – | `{url}` | 1 |
-| `todo.list` | bar | – | `Todo[]` | 1 |
-| `todo.create` | bar | `{text}` | `Todo[]` | 1 |
-| `todo.update` | bar | `{todoId, text?, done?}` | `Todo[]` | 1 |
-| `todo.delete` | bar | `{todoId}` | `Todo[]` | 1 |
-| `members.adminList` | admin | – | `MemberAdmin[]` (all statuses) | 2 |
-| `members.syncPreview` | admin | – | `SyncPreview` | 2 |
-| `members.syncApply` | admin | `{add: externalKey[], deactivate: memberId[], renames: {memberId, externalKey}[]}` | `SyncResult` | 2 |
-| `members.update` | admin | `{memberId, displayName?, phone?, status?}` | `MemberAdmin[]` | 2 |
-| `members.merge` | admin | `{fromId, intoId}` | `MemberAdmin[]` | 2 |
-| `members.mapLegacy` | admin | – | `{mapped, created, total}` | 2 |
-| `expense.backfillType` | admin | – | `{updated}` | 3 |
-| `product.list` | bar | – | `Product[]` (active only for bar, all for admin) | 4 |
-| `product.upsert` | admin | `ProductInput` (no productId = create) | `Product[]` | 4 |
-| `product.seedPlaceholder` | admin | – (staging only) | `Product[]` | 4 |
+| Action | Role | Payload | Returns |
+|---|---|---|---|
+| `session.init` | bar | – | `InitData` (role, pubName, env, version, period, cardTypes, members, shift, todos; admin: expenses, reportUrl) |
+| `members.list` | bar | – | `Member[]` (re-read from the external list) |
+| `shift.get` | bar | – | `ShiftState` |
+| `sale.create` | bar | `{memberId}` or `{guest:{first,last}}`, plus `{cardType, qty, note?}` | `ShiftState` |
+| `sale.void` | bar | `{saleId}` | `ShiftState` |
+| `expense.list` | admin | – | `ExpensesState` |
+| `expense.create` | admin | `{date:'yyyy-MM-dd', desc, amountAgorot}` | `ExpensesState` (+ `warning`) |
+| `expense.void` | admin | `{expenseId}` | `ExpensesState` |
+| `report.refresh` | admin | – | `{url}` |
+| `todo.list` | bar | – | `Todo[]` |
+| `todo.create` | bar | `{text}` | `Todo[]` |
+| `todo.update` | bar | `{todoId, text?, done?}` | `Todo[]` |
+| `todo.delete` | bar | `{todoId}` | `Todo[]` |
 
-Admin-only actions are refused with `FORBIDDEN` for the bar PIN. `product.seedPlaceholder` and `admin.bootstrap` with `seedStaging` are refused when `ENV=production`.
+Before stage 2, `Member.id` is the legacy name key (`last|first`). Admin-only actions are refused with `FORBIDDEN` for the bar PIN.
+
+Later stages add: members sync and admin (stage 2), expense type EXPENSE/CREDIT (stage 3), products (stage 4).
+
+## Editor-only functions (not callable from the page)
+| Function | What it does |
+|---|---|
+| `setup` | Idempotent install/repair: points at the bound spreadsheet, hashes INITIAL_* PINs, converts `MEMBERS_URL` to `MEMBERS_FILE_ID`, creates sheets, folders, triggers and the open month, checks the members list. Logs ✔/✘ per step |
+| `seedStaging` | Staging only (`ENV=staging`): creates a fictitious members list and a second card type, then runs `setup` |
+| `dailyJob`, `backupJob` | Triggers (daily 08:00 close/refresh, weekly backup) |
+| `menuRefresh`, `menuCloseNow` | Spreadsheet menu `🍺 הסליק` |
