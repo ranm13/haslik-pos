@@ -272,7 +272,7 @@ Read docs/ROADMAP.md, CLAUDE.md, docs/PARITY.md and docs/DATA_MODEL.md. We are i
 | Stage | Name | State | Notes |
 |---|---|---|---|
 | −1 | Move to dedicated account | ✅ | Done 2026-11-20 (`docs/MIGRATION.md`) |
-| 0 | Mapping, contracts, staging | 🟡 | Docs written (commit `99aeed2`), awaiting user approval; staging not yet verified |
+| 0 | Mapping, contracts, staging | 🟡 | Docs written (commit `53c12bd`), awaiting user approval; staging not yet verified |
 | 1 | 1:1 rewrite | 🟡 | Server handlers drafted (uncommitted); must be adapted from the web API to `google.script.run` |
 | 2 | Members and identity | ⬜ | |
 | 3 | Credits in expenses | ⬜ | |

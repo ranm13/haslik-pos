@@ -44,4 +44,4 @@ If something goes wrong at any step before step 9: delete the copy and start aga
 | Wrong-PIN attempts (cache) | Reset; not important |
 | PINs | Same as the old ones for now. Replaced when moving to the new app (stage 1 in `docs/ROADMAP.md`) |
 
-> Completed 2026-11-20. The optional `Migrate.gs` helper was removed; it is in git history (commit `99aeed2`) if the old reports ever need copying.
+> Completed 2026-11-20. The optional `Migrate.gs` helper was removed; it is in git history (commit `53c12bd`) if the old reports ever need copying.
