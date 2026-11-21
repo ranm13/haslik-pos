@@ -1,5 +1,3 @@
-import type { Env } from '../shared/api';
-
 declare const __VERSION__: string;
 
 export const VERSION: string = typeof __VERSION__ === 'string' ? __VERSION__ : 'dev';
@@ -13,7 +11,6 @@ export const LOCK_WAIT_MS = 25000;
 export const IDEMPOTENCY_TTL_S = 6 * 3600;
 
 export const PROP = {
-  ENV: 'ENV',                       // 'staging' on staging; anything else = production
   MASTER_ID: 'MASTER_ID',
   REPORTS_FOLDER_ID: 'REPORTS_FOLDER_ID',
   BACKUP_FOLDER_ID: 'BACKUP_FOLDER_ID',
@@ -46,15 +43,7 @@ export function deleteProp(key: string): void {
   props().deleteProperty(key);
 }
 
-export function currentEnv(): Env {
-  return getProp(PROP.ENV) === 'staging' ? 'staging' : 'production';
-}
-
 export function isConfigured(): boolean {
   return !!getProp(PROP.ADMIN_PIN_HASH) && !!getProp(PROP.BAR_PIN_HASH) && !!getProp(PROP.MASTER_ID);
 }
 
-/** Subject prefix so staging mail is never mistaken for the real report. */
-export function mailPrefix(): string {
-  return currentEnv() === 'staging' ? '[STAGING] ' : '';
-}

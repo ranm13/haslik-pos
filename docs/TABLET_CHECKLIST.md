@@ -1,54 +1,55 @@
-# Tablet checklist – stage 1 (on staging)
+# Releasing a change + tablet checklist
 
-Run on the bar tablet (Chrome on Android), against the **staging** URL. The header shows a red **STAGING** stamp; if it doesn't, stop – you're on production.
-Use only the fictitious members (ישראל ישראלי, דנה כהן, …).
+There is no staging copy (D26). Every change goes to the real app like this, while the bar is closed.
 
-## A. One-time staging setup (in the dedicated account, ~5 min)
-1. Open the staging spreadsheet → **Extensions → Apps Script**.
-2. ⚙️ **Project Settings → Script Properties → Add**:
-   - `ENV` = `staging`
-   - `INITIAL_BAR_PIN` = a 4–10 digit test PIN
-   - `INITIAL_ADMIN_PIN` = a different 4–10 digit test PIN
-3. Back in the editor, pick the function **`seedStaging`** → **Run** → approve the permissions (Advanced → Go to …).
-   The log must end with ✔ lines only, including `✔ קודים עודכנו: בר + מנהל` and `✔ רשימת חברים: נקראו 20 חברים`.
-   Check Script Properties again: `INITIAL_BAR_PIN` / `INITIAL_ADMIN_PIN` are gone, `BAR_PIN_HASH` / `ADMIN_PIN_HASH` exist.
-4. **Deploy → New deployment** → Web app → Execute as **Me** → Who has access **Anyone with a Google account** → Deploy. Copy the URL.
+## How a release works
+- The bar's link (`…/exec`) serves a **fixed deployed version**. Pushing code doesn't change it.
+- The owner-only test link (Deploy → **Test deployments** → `…/dev`) always runs the **newest pushed code**, against the **real sheets**.
+- The triggers (daily close at 08:00, Sunday backup) also run the newest pushed code. So never leave untested code pushed overnight.
+- Rollback: Deploy → **Manage deployments** → ✏️ → pick the previous version → Deploy.
+
+## A. Release steps (every time)
+1. Spreadsheet menu `🍺 הסליק` → **גיבוי עכשיו**. A copy appears in the backups folder – that's the restore point.
+2. Claude runs `npm run push` (only after you say so).
+3. Open the `/dev` link and go through the checks below that touch what changed. Undo any test sale/expense right away (it stays in the sheet marked `בוטל`, which the report ignores).
+4. If OK: Deploy → Manage deployments → ✏️ → Version: **New version** → Deploy. The `/exec` link stays the same.
+5. If not OK: tell Claude; the bar link is still on the old version.
+
+## First release of the new app only (stage 1, once)
+Before step 2, in the Apps Script editor → ⚙️ **Project Settings → Script Properties**, add and **Save script properties**:
+- `INITIAL_BAR_PIN` = the new bar PIN (4–10 digits)
+- `INITIAL_ADMIN_PIN` = the new admin PIN (different)
+- `MEMBERS_URL` = the members-list link (the value of `MEMBERS_SHEET_URL` in the current `Config.gs`)
+
+After step 2, run **`setup`** in the editor. The log must show only ✔ lines, including `✔ קודים עודכנו: בר + מנהל` and `✔ רשימת חברים: נקראו N חברים`. The `INITIAL_…` properties are then gone (only hashes remain). Tell the bartenders the new bar PIN.
 
 ## B. Login
-- [ ] Opening the URL as the owner account goes straight in, with the **הוצאות** tab (admin without PIN).
-- [ ] On a device signed in with another Google account: PIN screen appears.
-- [ ] Wrong PIN → "קוד שגוי". Bar PIN → no הוצאות tab. Admin PIN → הוצאות tab.
-- [ ] Reloading the page keeps you logged in (PIN remembered on the device).
+- [ ] As the owner account: straight in, with the **הוצאות** tab (admin without PIN).
+- [ ] Signed in with another Google account: PIN screen. Wrong PIN → "קוד שגוי". Bar PIN → no הוצאות tab. Admin PIN → הוצאות tab.
+- [ ] Reload keeps you logged in.
 
 ## C. Sales
-- [ ] Search "ישר" finds ישראל ישראלי; one-letter search shows the hint.
-- [ ] ↻ refreshes the members list ("הרשימה עודכנה (20)").
-- [ ] Sale: pick member → choose card type → qty 3 → note → confirm. Toast ✓, stats go up, row appears in recent.
-- [ ] Row appears in `יומן מכירות` with the right price/total, and one row in `Audit`.
-- [ ] Double-tap confirm quickly → only **one** row in the sheet.
-- [ ] Guest sale ("לא ברשימה?") → recent row shows the tag "לא ברשימה".
-- [ ] Undo (tap ביטול, then בטוח?) → row struck through, stats go down, status `בוטל` in the sheet.
-- [ ] With the bar PIN, a sale older than 30 min has no ביטול button.
+- [ ] Search 2+ letters of a member's name finds them; ↻ refreshes the list.
+- [ ] Sale: member → card type → qty → confirm. Toast ✓, stats and recent list update; row in `יומן מכירות`, row in `Audit`.
+- [ ] Double-tap confirm quickly → only **one** row.
+- [ ] Guest sale ("לא ברשימה?") → tag "לא ברשימה".
+- [ ] Undo (ביטול → בטוח?) → struck through, stats go down, status `בוטל`.
 
 ## D. Shortages (חוסרים)
-- [ ] Add, tick as bought, untick, edit (✎), delete (two taps). Sheet `חוסרים` matches.
+- [ ] Add, tick, untick, edit (✎), delete. Sheet `חוסרים` matches.
 
 ## E. Expenses (admin)
-- [ ] Add an expense with today's date → appears in the list, total updates.
-- [ ] Add an expense dated in a previous month → warning that it was booked to the current month.
-- [ ] Void an expense (two taps).
-- [ ] "↻ עדכון הדוח עכשיו" → toast; "📊 פתיחת הדוח" opens the month's report with the sale and expense.
+- [ ] Add (today) → list and total update. Dated in a closed month → warning, booked to the current month.
+- [ ] Void (two taps).
+- [ ] "↻ עדכון הדוח עכשיו" → toast; "📊 פתיחת הדוח" opens the month's report.
 
 ## F. Tablet layout
-- [ ] Landscape: search on one side, recent sales on the other; the sale sheet opens centered.
-- [ ] Every button is easy to hit with a finger (≥48px).
-- [ ] Dark mode (Android dark theme) is readable.
-- [ ] Switching to another app and back refreshes tonight's stats.
+- [ ] Landscape: search on one side, recent sales on the other; sale sheet centered.
+- [ ] Buttons easy to hit (≥48px). Dark mode readable. Returning to the app refreshes tonight's stats.
 
-## G. Server jobs (spreadsheet menu `🍺 הסליק`)
+## G. Server jobs (menu `🍺 הסליק`)
 - [ ] "רענון הדוח של החודש הנוכחי" → toast.
-- [ ] "גיבוי עכשיו" → a copy appears in the `(STAGING)` backups folder.
-- [ ] "סגירת החודש עכשיו (ידני)…" → report locked, mail arrives with subject prefix `[STAGING]`, a new month opens.
+- [ ] The month close is checked at the end of the month by the trigger – compare that report with the previous month's format.
 
-## Stage 6 additions (later)
+## Stage 6 (later)
 - With the USB NFC reader connected, Android hides the on-screen keyboard. Turn on **"Use on-screen keyboard"** (Settings → System → Keyboard / Languages & input → Physical keyboard).

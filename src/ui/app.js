@@ -48,7 +48,6 @@
       var isAdmin = d.role === 'admin';
       $('pubName').textContent = d.pubName;
       $('periodTitle').textContent = d.period.title;
-      $('envStamp').classList.toggle('hidden', d.env !== 'staging');
       $('tabExp').classList.toggle('hidden', !isAdmin);
       renderShift(d.shift);
       S.todos = d.todos || []; renderTodos();

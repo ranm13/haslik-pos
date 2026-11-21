@@ -4,7 +4,7 @@
 import { toAgorot, toShekels } from '../shared/money';
 import { buildExpenses, buildIncome, netProfit, type ExpensesSection, type Income, type ReportExpense, type ReportSale } from '../core/report';
 import { fromText } from '../core/text';
-import { getProp, mailPrefix, PROP, PUB_NAME } from './config';
+import { getProp, PROP, PUB_NAME } from './config';
 import type { PeriodRow } from './periods';
 import { COLORS, dataRows, sheet } from './sheets';
 import { E, EXPENSE_HEADERS, P, S, SALES_HEADERS, SHEETS, VOIDED } from './schema';
@@ -265,5 +265,5 @@ export function emailReport(p: PeriodRow, r: ReportResult): void {
   try {
     options.attachments = [DriveApp.getFileById(r.book.getId()).getAs(MimeType.PDF).setName(PUB_NAME + ' - ' + p.title + '.pdf')];
   } catch (e) { console.warn('PDF failed: ' + e); }
-  MailApp.sendEmail(to, mailPrefix() + PUB_NAME + ' – דוח חודשי ' + p.title, 'דוח ' + p.title + ': ' + url, options);
+  MailApp.sendEmail(to, PUB_NAME + ' – דוח חודשי ' + p.title, 'דוח ' + p.title + ': ' + url, options);
 }

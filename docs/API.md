@@ -65,6 +65,5 @@ Later stages add: members sync and admin (stage 2), expense type EXPENSE/CREDIT 
 | Function | What it does |
 |---|---|
 | `setup` | Idempotent install/repair: points at the bound spreadsheet, hashes INITIAL_* PINs, converts `MEMBERS_URL` to `MEMBERS_FILE_ID`, creates sheets, folders, triggers and the open month, checks the members list. Logs ✔/✘ per step |
-| `seedStaging` | Staging only (`ENV=staging`): creates a fictitious members list and a second card type, then runs `setup` |
 | `dailyJob`, `backupJob` | Triggers (daily 08:00 close/refresh, weekly backup) |
 | `menuRefresh`, `menuCloseNow` | Spreadsheet menu `🍺 הסליק` |

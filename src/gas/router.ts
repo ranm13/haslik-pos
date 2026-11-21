@@ -2,7 +2,7 @@ import { ADMIN_ACTIONS, type ActionMap, type ActionName, type ApiRequest, type A
 import { AppError } from '../core/errors';
 import { audit } from './audit';
 import { authenticate, type Ctx } from './auth';
-import { currentEnv, PUB_NAME, VERSION } from './config';
+import { PUB_NAME, VERSION } from './config';
 import { createExpense, getExpensesState, voidExpense } from './expenses';
 import { membersForClient } from './members';
 import { periodDto, requireOpenPeriod } from './periods';
@@ -20,7 +20,6 @@ const handlers: Handlers = {
     const data: InitData = {
       role: ctx.role,
       pubName: PUB_NAME,
-      env: currentEnv(),
       version: VERSION,
       period: periodDto(p),
       cardTypes: getCardTypes(false).map(({ name, priceAgorot }) => ({ name, priceAgorot })),

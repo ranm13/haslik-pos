@@ -1,11 +1,11 @@
 /**
- * Setup, scheduled jobs, spreadsheet menu and staging seed (port of legacy Setup.gs).
+ * Setup, scheduled jobs and spreadsheet menu (port of legacy Setup.gs).
  */
 import { validatePinFormat, validatePinPair } from '../core/auth';
 import { fileIdFromUrl } from '../core/text';
 import { monthKey, nextPeriodKeyOnClose, shouldClose } from '../core/time';
 import { hashPin } from './auth';
-import { BACKUP_KEEP_DAYS, CLOSE_HOUR, currentEnv, deleteProp, getProp, PROP, PUB_NAME, setProps } from './config';
+import { BACKUP_KEEP_DAYS, CLOSE_HOUR, deleteProp, getProp, PROP, PUB_NAME, setProps } from './config';
 import { readExternalMembers } from './external';
 import { appendOpenPeriod, getOpenPeriod, getPeriodByKey, type PeriodRow } from './periods';
 import { buildReport, emailReport, lockReport } from './report';
@@ -30,7 +30,7 @@ export function setup(): string[] {
   setProps({ [PROP.MASTER_ID]: book.getId() });
   resetSsMemo();
   book.setSpreadsheetTimeZone(tz());
-  log.push('✔ קובץ המערכת: ' + book.getName() + ' (סביבה: ' + currentEnv() + ')');
+  log.push('✔ קובץ המערכת: ' + book.getName());
 
   log.push(...configurePins());
   if (!getProp(PROP.ADMIN_EMAIL)) setProps({ [PROP.ADMIN_EMAIL]: Session.getEffectiveUser().getEmail() });
@@ -59,9 +59,8 @@ export function setup(): string[] {
 
   const parents = DriveApp.getFileById(book.getId()).getParents();
   const base = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
-  const suffix = currentEnv() === 'staging' ? ' (STAGING)' : '';
-  const reports = ensureFolder(PROP.REPORTS_FOLDER_ID, base, PUB_NAME + ' – דוחות חודשיים' + suffix);
-  ensureFolder(PROP.BACKUP_FOLDER_ID, base, PUB_NAME + ' – גיבויים' + suffix);
+  const reports = ensureFolder(PROP.REPORTS_FOLDER_ID, base, PUB_NAME + ' – דוחות חודשיים');
+  ensureFolder(PROP.BACKUP_FOLDER_ID, base, PUB_NAME + ' – גיבויים');
   getProp(PROP.FINANCE_EMAILS).split(',').map(s => s.trim()).filter(Boolean)
     .forEach(m => { try { reports.addViewer(m); } catch (e) { console.warn(e); } });
   log.push('✔ תיקיית דוחות: ' + reports.getUrl());
@@ -217,35 +216,3 @@ export function menuCloseNow(): void {
   ui.alert('החודש נסגר והדוח נשלח ל-' + getProp(PROP.ADMIN_EMAIL));
 }
 
-/* ---------- staging seed (editor only, refuses outside staging) ---------- */
-
-const FICTITIOUS = [
-  ['ישראלי', 'ישראל'], ['כהן', 'דנה'], ['לוי', 'רות'], ['מזרחי', 'יוסי'], ['פרץ', 'מיכל'], ['ביטון', 'אבי'],
-  ['דהן', 'נועה'], ['אברהם', 'עומר'], ['פרידמן', 'שירה'], ['אזולאי', 'איתי'], ['גבאי', 'טל'], ['חדד', 'יעל'],
-  ['שפירא', 'גיל'], ['רוזן', 'הדס'], ['כץ', 'אורי'], ['ברק', 'ליאת'], ['נחום', 'עידו'], ['סער', 'מאיה'],
-  ['כהן', 'דן'], ['לוי', 'רון'],
-];
-
-/**
- * Staging only (Script Property ENV=staging): creates a fictitious members list and a second
- * card type, then runs setup. Never touches real member data.
- */
-export function seedStaging(): string[] {
-  if (currentEnv() !== 'staging') throw new Error('seedStaging רץ רק כש-ENV=staging');
-  const log: string[] = [];
-  if (!getProp(PROP.MEMBERS_FILE_ID) && !getProp(PROP.MEMBERS_URL)) {
-    const ext = SpreadsheetApp.create('הסליק STAGING – רשימת חברים (שמות פיקטיביים)');
-    const sh = ext.getSheets()[0];
-    sh.setName('עדכני');
-    sh.setRightToLeft(true);
-    sh.getRange(1, 1, 1, 3).setValues([['מספר', 'שם משפחה', 'שם פרטי']]);
-    sh.getRange(2, 1, FICTITIOUS.length, 3).setValues(FICTITIOUS.map((n, i) => [i + 1, n[0], n[1]]));
-    setProps({ [PROP.MEMBERS_FILE_ID]: ext.getId(), [PROP.MEMBERS_TAB_NAME]: 'עדכני', [PROP.MEMBERS_LAST_HEADER]: 'שם משפחה', [PROP.MEMBERS_FIRST_HEADER]: 'שם פרטי' });
-    log.push('✔ נוצרה רשימת חברים פיקטיבית: ' + ext.getUrl());
-  }
-  log.push(...setup());
-  const types = sheet(SHEETS.TYPES);
-  if (types.getLastRow() < 3) types.getRange(3, 1, 1, 3).setValues([['מוזלת', 30, true]]);
-  log.push('✔ סוגי כרטיסיות לדוגמה: רגילה ₪50, מוזלת ₪30');
-  return log;
-}

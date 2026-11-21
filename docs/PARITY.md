@@ -2,7 +2,7 @@
 
 Every legacy capability, and the stage where it is kept / changed / replaced. Nothing disappears silently (ROADMAP §8).
 
-Status: ✅ done (on staging) · ⏳ planned · 🔁 changed · ❌ dropped (with reason)
+Status: ✅ done · ⏳ planned · 🔁 changed · ❌ dropped (with reason)
 
 | # | Legacy capability | Stage | New behavior | Status |
 |---|---|---|---|---|
@@ -23,7 +23,7 @@ Status: ✅ done (on staging) · ⏳ planned · 🔁 changed · ❌ dropped (wit
 | 15 | Finance viewers on reports folder | 1 | Kept (`FINANCE_EMAILS` Script Property) | ⏳ |
 | 16 | Weekly backup (Sun 04:00, 120 days) | 1 → 8 | Kept; daily in stage 8 | ⏳ |
 | 17 | Spreadsheet menu (refresh report, backup, close month, setup) | 1 | Kept | ⏳ |
-| 18 | `setup()` | 1 | 🔁 Kept and extended: also hashes one-time PINs, converts `MEMBERS_URL`, logs ✔/✘ per step. `seedStaging()` added for staging only | ⏳ |
+| 18 | `setup()` | 1 | 🔁 Kept and extended: also hashes one-time PINs, converts `MEMBERS_URL`, logs ✔/✘ per step | ⏳ |
 | 19 | Card types sheet (name, price, active) | 1 → 5 | Kept until the wallet replaces cards (stage 5). Products catalog (stage 4) is separate | ⏳ |
 | 20 | Members from external list, read-only, name-derived key | 2 | 🔁 App-owned `Members` with stable `memberId`; external list stays the membership source via admin-approved sync | ⏳ |
 | 21 | Reading xlsx member files | 1 | Kept | ⏳ |

@@ -5,7 +5,6 @@
 import type { Agorot } from './money';
 
 export type Role = 'bar' | 'admin';
-export type Env = 'staging' | 'production';
 
 export type ErrorCode =
   | 'PIN_REQUIRED' | 'RATE_LIMITED' | 'FORBIDDEN'
@@ -91,7 +90,6 @@ export type ProductInput = Omit<Product, 'productId'> & { productId?: string };
 export interface InitData {
   role: Role;
   pubName: string;
-  env: Env;
   version: string;
   period: Period;
   cardTypes: CardType[];

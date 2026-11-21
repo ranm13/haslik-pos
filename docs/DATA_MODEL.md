@@ -67,7 +67,6 @@ Maps every key ever written to `יומן מכירות` (`last|first`, `guest|las
 ## Script Properties
 | Key | Set by | Meaning |
 |---|---|---|
-| `ENV` | bootstrap | `staging` / `production` |
 | `MASTER_ID` | bootstrap | system spreadsheet id |
 | `REPORTS_FOLDER_ID`, `BACKUP_FOLDER_ID` | setup | |
 | `PIN_SALT`, `BAR_PIN_HASH`, `ADMIN_PIN_HASH` | bootstrap / `admin.setPins` | |

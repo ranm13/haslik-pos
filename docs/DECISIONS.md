@@ -1,10 +1,10 @@
 # Decisions log (for review)
 
-Decisions taken while working unattended through stages 0–4. The user pre-approved these on staging (2026-11-19). Anything that would touch production is listed under **Pending for the user** instead.
+Decisions log. Anything that needs the user (real data, hardware, approvals) is listed under **Pending for the user**.
 
 | # | Date | Stage | Decision | Why | Reversible? |
 |---|---|---|---|---|---|
-| D1 | 2026-11-19 | 0 | Staging is a **new** spreadsheet + bound script in the dedicated account, seeded with fictitious data. Not a copy of production | No real names on staging; production untouched | yes |
+| D1 | 2026-11-19 | 0 | *(superseded by D26)* Staging is a **new** spreadsheet + bound script in the dedicated account, seeded with fictitious data. Not a copy of production | No real names on staging; production untouched | yes |
 | D2 | 2026-11-19 | 0 | Docs are in English (sheet/column names stay Hebrew); ROADMAP stays Hebrew | precision for code contracts | yes |
 | D3 | 2026-11-19 | 0 | Backend written in TypeScript, bundled by esbuild into one `Code.js` for Apps Script. Pure logic in `src/core` (no Google APIs) so Vitest runs it in Node | ROADMAP §2.6 | yes |
 | D4 | 2026-11-19 | 1 | *(superseded by D16)* Web app access is `ANYONE_ANONYMOUS` (legacy used `ANYONE`, which requires a Google sign-in and breaks `fetch` from GitHub Pages) | required for the static frontend | yes |
@@ -29,11 +29,12 @@ Decisions taken while working unattended through stages 0–4. The user pre-appr
 | D23 | 2026-11-20 | 1 | PIN lockout stays **global**, 15 wrong tries / 10 min, as legacy. Supersedes D8 (per-device needs device tokens) | user approved the default | yes |
 | D24 | 2026-11-20 | 1 | Stage 1 adds **no columns to existing sheets**: the drafted `מזהה חבר` (sales) and `סוג` (expenses) columns wait for stages 2 and 3 (D11, D14). Only new sheet: `Audit` | promise "no schema changes" in the stage 1 plan | yes |
 | D25 | 2026-11-20 | 1 | PINs are set by typing `INITIAL_BAR_PIN` / `INITIAL_ADMIN_PIN` in Script Properties and running `setup`, which hashes and deletes them. No PIN-change screen in the app (none in legacy) | no plain PINs in code; no editor code changes needed | yes |
+| D26 | 2026-11-21 | all | **No staging.** Work directly on the production project: backup ("גיבוי עכשיו") before every push, push only when the bar is closed, test on the owner-only `/dev` link, then deploy a new version (old version stays one click away). `seedStaging`, `ENV` and the STAGING stamp removed. Supersedes D1 | 1 user, ~5 h/week; downtime is acceptable, only data safety matters (user) | yes |
 
 ## Pending for the user
 | # | Item | Needed before |
 |---|---|---|
-| U1 | One-time "Allow" (OAuth consent) on the staging script | integration tests on staging |
+| U1 | ~~One-time "Allow" on the staging script~~ – staging dropped (D26) | – |
 | U2 | Real product catalog and prices | production stage 4 |
 | U3 | Budget-office report format (open decision #7) | stage 5 |
 | U4 | Tablet manual checklist (`docs/TABLET_CHECKLIST.md`) | production cutover |

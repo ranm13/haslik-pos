@@ -13,7 +13,7 @@ try { version = execSync('git rev-parse --short HEAD', { cwd: root }).toString()
 version += '-' + new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
 
 // Top-level functions Apps Script must see by name: web app, google.script.run target, triggers, menu, editor tools.
-const ENTRY_POINTS = ['doGet', 'api', 'dailyJob', 'backupJob', 'onOpen', 'menuRefresh', 'menuCloseNow', 'setup', 'seedStaging'];
+const ENTRY_POINTS = ['doGet', 'api', 'dailyJob', 'backupJob', 'onOpen', 'menuRefresh', 'menuCloseNow', 'setup'];
 
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });

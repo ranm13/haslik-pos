@@ -66,7 +66,7 @@ CLAUDE.md        working rules for Claude (see section 8)
    - **The current PINs are considered exposed** (they are in the code). They are replaced when stage 1 goes live.
    - The sheets themselves: edit access only for the owner and the script. Bank-grade security is not required, but protection against "someone found the URL" is.
 5. **Speed:** `google.script.run` takes about 1–3 seconds. The UI must be optimistic with a clear indicator (pending / confirmed / failed) and must not block the bartender. The balance is shown from `balanceCache`, not computed from the whole ledger.
-6. **Tests:** money logic is written as pure functions in `src/core` (no `SpreadsheetApp`) so it runs in Node in CI. The Sheets and lock layer is tested with integration tests against staging.
+6. **Tests:** money logic is written as pure functions in `src/core` (no `SpreadsheetApp`) so it runs in Node in CI. The Sheets and lock layer is checked by hand on the live app through the `/dev` test link (see section 8).
 
 ---
 
@@ -126,18 +126,17 @@ Every stage ends in a state that works in production. A stage does not start bef
 - Old monthly reports stay in the private account; the links in `תקופות` keep working.
 - The owner of the external members list shares it with the dedicated account (view). A prerequisite for the move.
 - In the old app only the two triggers are deleted (to prevent a double monthly report). Data and code stay.
-- From here on: staging, clasp and production all live in the dedicated account. GitHub stays on the personal account.
+- From here on: clasp and the app live in the dedicated account. GitHub stays on the personal account.
 - Full instructions: `docs/MIGRATION.md`.
 - **Acceptance:** `setup()` finishes with all 7 steps, a test sale at the new URL is written to the copy only, and the bar works at the new URL.
 
-### Stage 0 – Mapping, contracts and staging
+### Stage 0 – Mapping and contracts
 - Import the existing Apps Script code into `legacy/`.
 - Write `docs/CURRENT_STATE.md`: all functions, all sheets and columns, all screens and flows, all triggers (daily close, weekly backup) and emails.
 - Write `docs/PARITY.md`: a table of **every existing capability** → in which stage it is kept, changed or replaced, and why. No capability disappears silently.
 - Write `docs/DATA_MODEL.md` (final schema for all sheets, transaction types, idempotency and undo rules) and `docs/API.md` (all actions, input, output, errors, required permission).
 - Write `docs/INVARIANTS.md`: a list of money invariants, each mapped to an automated test (see stage 5).
-- Create a **staging spreadsheet** and a separate Apps Script deployment for staging. All development is done against staging. The external list on staging is a copy with fictitious names.
-- **Acceptance:** the five documents are approved by the user, and staging works.
+- **Acceptance:** the five documents are approved by the user.
 
 ### Stage 1 – 1:1 rewrite (no new features)
 - Server: one entry point `api(request)` called from the UI with `google.script.run` (`{action, payload, auth, clientTxId}`) → handlers. Uniform response `{ok, data | error: {code, message}}`.
@@ -189,7 +188,7 @@ Every stage ends in a state that works in production. A stage does not start bef
     - an admin undo that would go below 0 is blocked.
     - total top-ups in the report = sum of TOPUP transactions minus TOPUP reversals in the month.
     - month/shift assignment around midnight, 08:00 and month end.
-  - **Integration (against staging):** a script that sends 20 concurrent charges to the same member whose balance covers 10 of them and verifies exactly 10 succeed; and a duplicate send of the same clientTxId.
+  - **Integration (live app, `/dev` link, bar closed):** a script that sends 20 concurrent charges to the same member whose balance covers 10 of them and verifies exactly 10 succeed; and a duplicate send of the same clientTxId.
 - **Acceptance:** all tests green, and one pilot evening with name search only, with no differences between the report and the manual count.
 
 ### Stage 6 – NFC (USB reader)
@@ -252,7 +251,7 @@ Read docs/ROADMAP.md, CLAUDE.md, docs/PARITY.md and docs/DATA_MODEL.md. We are i
 ## 8. Rules for CLAUDE.md
 
 - One stage at a time. Never implement features from future stages.
-- Never write to the production spreadsheet during development. Staging only.
+- No staging copy (D26). Before every push: a backup ("גיבוי עכשיו"), push on a day the bar is closed, test on the `/dev` link, then deploy a new version. Never leave untested code pushed – the triggers run the newest pushed code.
 - Never delete or edit rows in `Transactions`. Append only.
 - Every business rule is enforced **on the server**. The UI only reflects it.
 - Amounts in agorot (integer). No floats in money calculations.
@@ -272,8 +271,8 @@ Read docs/ROADMAP.md, CLAUDE.md, docs/PARITY.md and docs/DATA_MODEL.md. We are i
 | Stage | Name | State | Notes |
 |---|---|---|---|
 | −1 | Move to dedicated account | ✅ | Done 2026-11-20 (`docs/MIGRATION.md`) |
-| 0 | Mapping, contracts, staging | 🟡 | Docs written (commit `53c12bd`), awaiting user approval; staging not yet verified |
-| 1 | 1:1 rewrite | 🟡 | Code done and pushed to staging (2026-11-20). Waiting: staging setup + `docs/TABLET_CHECKLIST.md`, then production cutover (U5) |
+| 0 | Mapping and contracts | 🟡 | Docs written (commit `53c12bd`), awaiting user approval |
+| 1 | 1:1 rewrite | 🟡 | Code done (2026-11-21). Next: first release to production with `docs/TABLET_CHECKLIST.md` |
 | 2 | Members and identity | ⬜ | |
 | 3 | Credits in expenses | ⬜ | |
 | 4 | Product catalog | ⬜ | |
