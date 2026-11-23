@@ -1,6 +1,6 @@
 import { asText } from '../core/text';
 import { IDEMPOTENCY_TTL_S } from './config';
-import { ensureSheet, findRow } from './sheets';
+import { findRow, sheetOrCreate } from './sheets';
 import { AUDIT_HEADERS, SHEETS } from './schema';
 import { cache } from './util';
 
@@ -10,7 +10,7 @@ let auditSheet: GoogleAppsScript.Spreadsheet.Sheet | null = null;
 
 /** Append-only audit trail; every write action logs one row (ROADMAP §8). */
 export function audit(action: string, actor: Actor, clientTxId: string, payload: unknown): void {
-  if (!auditSheet) auditSheet = ensureSheet(SHEETS.AUDIT, AUDIT_HEADERS, [], { 1: 'dd/MM/yyyy HH:mm:ss' });
+  if (!auditSheet) auditSheet = sheetOrCreate(SHEETS.AUDIT, AUDIT_HEADERS, [], { 1: 'dd/MM/yyyy HH:mm:ss' });
   let json = '';
   try { json = JSON.stringify(payload === undefined ? null : payload); } catch { json = '"<unserializable>"'; }
   auditSheet.appendRow([new Date(), asText(action), asText(actor.who), asText(clientTxId || ''), asText(json.slice(0, 2000))]);

@@ -3,14 +3,14 @@ import { AppError } from '../core/errors';
 import { asText, cleanText, fromText } from '../core/text';
 import { alreadyDone, audit, markDone } from './audit';
 import type { Ctx } from './auth';
-import { dataRows, ensureSheet, findRow, withLock } from './sheets';
+import { dataRows, findRow, sheetOrCreate, withLock } from './sheets';
 import { SHEETS, T, TODO_DELETED, TODO_DONE, TODO_HEADERS, TODO_OPEN } from './schema';
 import { fmt, toDate } from './util';
 
 const todoSheet = () => ensureSheetOnce();
 let todoMemo: GoogleAppsScript.Spreadsheet.Sheet | null = null;
 function ensureSheetOnce() {
-  if (!todoMemo) todoMemo = ensureSheet(SHEETS.TODO, TODO_HEADERS, [], { 4: 'dd/MM/yyyy HH:mm', 6: 'dd/MM/yyyy HH:mm' });
+  if (!todoMemo) todoMemo = sheetOrCreate(SHEETS.TODO, TODO_HEADERS, [], { 4: 'dd/MM/yyyy HH:mm', 6: 'dd/MM/yyyy HH:mm' });
   return todoMemo;
 }
 

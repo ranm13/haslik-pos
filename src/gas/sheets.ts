@@ -61,6 +61,21 @@ export const COLORS = {
   income: '#b7e1cd', expense: '#f4c7c3', border: '#9aa5a0',
 };
 
+/**
+ * Fast path for request handlers: the sheet if it exists (one cheap call); the full ensureSheet only
+ * when it's missing. ensureSheet rewrites formats on every row, so it must not run on every request.
+ */
+export function sheetOrCreate(name: string, headers: string[], numberCols: number[] = [], dateFormats: Record<number, string> = {}): GoogleAppsScript.Spreadsheet.Sheet {
+  return ss().getSheetByName(name) || ensureSheet(name, headers, numberCols, dateFormats);
+}
+
+/** Writes trailing header cells that are missing (a column added by a later stage), without touching formats. */
+export function addMissingHeaders(sh: GoogleAppsScript.Spreadsheet.Sheet, headers: string[]): void {
+  const have = sh.getLastColumn();
+  if (have >= headers.length) return;
+  sh.getRange(1, have + 1, 1, headers.length - have).setValues([headers.slice(have)]);
+}
+
 /** Creates the sheet if missing, writes headers if empty, appends missing trailing headers (schema growth). */
 export function ensureSheet(name: string, headers: string[], numberCols: number[] = [], dateFormats: Record<number, string> = {}): GoogleAppsScript.Spreadsheet.Sheet {
   const book = ss();

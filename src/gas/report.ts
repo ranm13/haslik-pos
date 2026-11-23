@@ -3,6 +3,7 @@
  */
 import { toAgorot, toShekels } from '../shared/money';
 import { buildExpenses, buildIncome, netProfit, type ExpensesSection, type Income, type ReportExpense, type ReportSale } from '../core/report';
+import { typeFromLabel } from '../core/expenses';
 import { fromText } from '../core/text';
 import { getProp, PROP, PUB_NAME } from './config';
 import type { PeriodRow } from './periods';
@@ -37,7 +38,7 @@ export function reportSales(periodKey: string): ReportSale[] {
 export function reportExpenses(periodKey: string): ReportExpense[] {
   return dataRows(sheet(SHEETS.EXPENSES), EXPENSE_HEADERS.length)
     .filter(r => keyOf(r[E.PERIOD]) === periodKey && r[E.STATUS] !== VOIDED)
-    .map(r => ({ date: r[E.DATE] as Date, desc: fromText(r[E.DESC]), amountAgorot: toAgorot(r[E.AMOUNT] as number), type: 'EXPENSE' as const }));
+    .map(r => ({ date: r[E.DATE] as Date, desc: fromText(r[E.DESC]), amountAgorot: toAgorot(r[E.AMOUNT] as number), type: typeFromLabel(r[E.TYPE]) }));
 }
 
 export function buildReport(p: PeriodRow, final: boolean): ReportResult {
@@ -155,7 +156,10 @@ function writeIncomeTab(sh: Sheet, inc: Income): { qtyCell: string; amountCell: 
 
 function writeExpensesTab(sh: Sheet, exp: ExpensesSection): { amountCell: string } {
   resetSheet(sh);
-  const rows = exp.rows.map(r => [r.date, r.desc, toShekels(r.amountAgorot)]);
+  // refunds (זיכוי) are negative, so the SUM below is the net expense used by the summary
+  const rows = exp.rows.map(r => r.type === 'CREDIT'
+    ? [r.date, 'זיכוי: ' + r.desc, -toShekels(r.amountAgorot)]
+    : [r.date, r.desc, toShekels(r.amountAgorot)]);
   sh.getRange(1, 1, 1, 3).setValues([['תאריך', 'פירוט', 'סכום']]);
   styleHeader(sh.getRange(1, 1, 1, 3));
   sh.setFrozenRows(1);

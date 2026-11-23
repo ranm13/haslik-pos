@@ -16,7 +16,7 @@ export function externalHeaders() {
   };
 }
 
-/** Parsed external list, cached 10 minutes (same as legacy). */
+/** Parsed external list, cached 6 hours (the ↻ button in the app forces a fresh read). */
 export function readExternalMembers(forceRefresh: boolean): SyncCandidate[] {
   const c = cache();
   if (!forceRefresh) {
@@ -24,7 +24,7 @@ export function readExternalMembers(forceRefresh: boolean): SyncCandidate[] {
     if (hit) return JSON.parse(hit) as SyncCandidate[];
   }
   const list = parseExternalTable(readValues(), externalHeaders(), heCompare);
-  try { c.put('extmembers', JSON.stringify(list), 600); } catch { /* too big for cache – fine */ }
+  try { c.put('extmembers', JSON.stringify(list), 21600); } catch { /* too big for cache – fine */ }
   return list;
 }
 

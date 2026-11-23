@@ -31,16 +31,22 @@ export const PROP = {
 
 const props = () => PropertiesService.getScriptProperties();
 
+/** All properties, read once per execution (each getProperty is a separate service call). */
+let memo: Record<string, string> | null = null;
+
 export function getProp(key: string): string {
-  return props().getProperty(key) || '';
+  if (!memo) memo = props().getProperties();
+  return memo[key] || '';
 }
 
 export function setProps(values: Record<string, string>): void {
   props().setProperties(values, false);
+  if (memo) Object.assign(memo, values);
 }
 
 export function deleteProp(key: string): void {
   props().deleteProperty(key);
+  if (memo) delete memo[key];
 }
 
 export function isConfigured(): boolean {

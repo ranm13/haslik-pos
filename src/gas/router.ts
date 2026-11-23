@@ -3,7 +3,7 @@ import { AppError } from '../core/errors';
 import { audit } from './audit';
 import { authenticate, type Ctx } from './auth';
 import { PUB_NAME, VERSION } from './config';
-import { createExpense, getExpensesState, voidExpense } from './expenses';
+import { createExpense, getExpensesState, updateExpense, voidExpense } from './expenses';
 import { membersForClient } from './members';
 import { periodDto, requireOpenPeriod } from './periods';
 import { buildReport } from './report';
@@ -41,6 +41,7 @@ const handlers: Handlers = {
   'expense.list': () => getExpensesState(),
   'expense.create': (ctx, p) => createExpense(ctx, p),
   'expense.void': (ctx, p) => voidExpense(ctx, p?.expenseId),
+  'expense.update': (ctx, p) => updateExpense(ctx, p),
   'report.refresh': ctx => {
     buildReport(requireOpenPeriod(), false);
     audit('report.refresh', ctx, ctx.clientTxId, null);

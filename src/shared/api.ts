@@ -61,7 +61,7 @@ export interface ShiftState { date: string; cards: number; amountAgorot: Agorot;
 
 export type ExpenseType = 'EXPENSE' | 'CREDIT';
 
-export interface ExpenseItem { id: string; date: string; desc: string; amountAgorot: Agorot; type: ExpenseType }
+export interface ExpenseItem { id: string; date: string /* dd/MM */; dateIso: string /* yyyy-MM-dd, for editing */; desc: string; amountAgorot: Agorot; type: ExpenseType }
 
 export interface ExpensesState {
   items: ExpenseItem[];
@@ -122,6 +122,7 @@ export interface ActionMap {
   'expense.list': { payload: void; result: ExpensesState };
   'expense.create': { payload: ExpenseInput; result: ExpensesState };
   'expense.void': { payload: { expenseId: string }; result: ExpensesState };
+  'expense.update': { payload: ExpenseInput & { expenseId: string }; result: ExpensesState };
   'report.refresh': { payload: void; result: { url: string } };
   'todo.list': { payload: void; result: Todo[] };
   'todo.create': { payload: { text: string }; result: Todo[] };
@@ -148,5 +149,5 @@ export interface SyncApplyInput {
 
 /** Actions that require the admin role (admin PIN or the owner's Google account). */
 export const ADMIN_ACTIONS: readonly ActionName[] = [
-  'expense.list', 'expense.create', 'expense.void', 'report.refresh',
+  'expense.list', 'expense.create', 'expense.update', 'expense.void', 'report.refresh',
 ];

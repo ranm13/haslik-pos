@@ -1,6 +1,6 @@
 /**
  * Sheet names and column layouts. Legacy sheets keep their Hebrew names and column order (docs/DATA_MODEL.md).
- * Stage 1 adds no columns to existing sheets; the only new sheet is `Audit`.
+ * Columns added after stage 1: `סוג` in `יומן הוצאות` (expense / refund, D27). New sheet: `Audit`.
  */
 
 export const SHEETS = {
@@ -18,8 +18,8 @@ export const S = { ID: 0, TS: 1, PERIOD: 2, SHIFT: 3, LAST: 4, FIRST: 5, KEY: 6,
   PRICE: 10, TOTAL: 11, NOTE: 12, BY: 13, STATUS: 14, VOID_AT: 15, VOID_BY: 16 } as const;
 
 export const EXPENSE_HEADERS = ['מזהה', 'זמן רישום', 'חודש', 'תאריך הוצאה', 'פירוט', 'סכום', 'נרשם ע"י', 'סטטוס',
-  'בוטל בזמן', 'בוטל ע"י'];
-export const E = { ID: 0, TS: 1, PERIOD: 2, DATE: 3, DESC: 4, AMOUNT: 5, BY: 6, STATUS: 7, VOID_AT: 8, VOID_BY: 9 } as const;
+  'בוטל בזמן', 'בוטל ע"י', 'סוג'];
+export const E = { ID: 0, TS: 1, PERIOD: 2, DATE: 3, DESC: 4, AMOUNT: 5, BY: 6, STATUS: 7, VOID_AT: 8, VOID_BY: 9, TYPE: 10 } as const;
 
 export const TYPES_HEADERS = ['שם', 'מחיר', 'פעיל'];
 

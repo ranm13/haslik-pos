@@ -14,11 +14,11 @@ Status: ✅ done · ⏳ planned · 🔁 changed · ❌ dropped (with reason)
 | 6 | Sale: card type, qty 1–20, note, idempotent id | 1 | Kept; optimistic UI with pending/confirmed/failed | ⏳ |
 | 7 | Tonight's stats (cards, ₪) and recent list (40) | 1 | Kept | ⏳ |
 | 8 | Undo: bar ≤30 min, admin any time in open month, never closed month | 1 | Kept unchanged (status change on the legacy sheet). The ledger rules (REVERSAL, "no later action on member") come with the wallet in stage 5 | ⏳ |
-| 9 | Expenses: add (desc, amount, date), void, list, total | 1 → 3 | Kept; stage 3 adds type EXPENSE/CREDIT and net | ⏳ |
+| 9 | Expenses: add (desc, amount, date), void, list, total | 1 → 3 | Kept; plus **edit** and **refunds** (type הוצאה/זיכוי, total = net), added 2026-11-23 (D27) | ⏳ |
 | 10 | Expense dated in closed month → booked to open month + warning | 1 | Kept | ⏳ |
 | 11 | Shortages list: add / tick / edit / delete (soft) | 1 → 7 | Kept as-is until stage 7 (computed shortages) | ⏳ |
 | 12 | Monthly periods, auto close on last day 08:00, overdue close | 1 | Kept (server trigger) | ⏳ |
-| 13 | Monthly report file (income/expenses/summary), draft refreshed daily | 1 → 3 → 5 | Kept; stage 3 adds credits/net; stage 5 replaces card income with top-ups | ⏳ |
+| 13 | Monthly report file (income/expenses/summary), draft refreshed daily | 1 → 3 → 5 | Kept; refunds appear in the expenses tab as negative "זיכוי:" lines, so its total and the summary are net (D27); stage 5 replaces card income with top-ups | ⏳ |
 | 14 | Lock closed report, email with HTML + PDF to admin | 1 | Kept | ⏳ |
 | 15 | Finance viewers on reports folder | 1 | Kept (`FINANCE_EMAILS` Script Property) | ⏳ |
 | 16 | Weekly backup (Sun 04:00, 120 days) | 1 → 8 | Kept; daily in stage 8 | ⏳ |

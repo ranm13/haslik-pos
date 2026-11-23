@@ -49,7 +49,8 @@ Every write action takes `clientTxId`. Inside the script lock the server checks 
 | `sale.create` | bar | `{memberId}` or `{guest:{first,last}}`, plus `{cardType, qty, note?}` | `ShiftState` |
 | `sale.void` | bar | `{saleId}` | `ShiftState` |
 | `expense.list` | admin | – | `ExpensesState` |
-| `expense.create` | admin | `{date:'yyyy-MM-dd', desc, amountAgorot}` | `ExpensesState` (+ `warning`) |
+| `expense.create` | admin | `{date:'yyyy-MM-dd', desc, amountAgorot, type?:'EXPENSE'|'CREDIT'}` (CREDIT = refund) | `ExpensesState` (+ `warning`) |
+| `expense.update` | admin | `{expenseId, date, desc, amountAgorot, type}` – active rows of the open month only; booking month never changes | `ExpensesState` (+ `warning`) |
 | `expense.void` | admin | `{expenseId}` | `ExpensesState` |
 | `report.refresh` | admin | – | `{url}` |
 | `todo.list` | bar | – | `Todo[]` |

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { bookingWarning, expenseTotals, typeFromLabel, validateExpenseInput } from '../src/core/expenses';
+import { bookingWarning, expenseChangeError, expenseTotals, typeFromLabel, validateExpenseInput } from '../src/core/expenses';
+
+describe('E3 editing an expense', () => {
+  it('allowed only for an active row in the open month', () => {
+    expect(expenseChangeError(false, '2026-11', '2026-11')).toBe('');
+    expect(expenseChangeError(true, '2026-11', '2026-11')).toContain('בוטלה');
+    expect(expenseChangeError(false, '2026-10', '2026-11')).toContain('נסגר');
+  });
+});
 
 describe('E1 expense input', () => {
   const ok = { date: '2026-11-19', desc: 'מונימרקט – שתייה', amountAgorot: 12350 };

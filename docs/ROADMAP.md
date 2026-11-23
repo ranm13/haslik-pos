@@ -274,7 +274,7 @@ Read docs/ROADMAP.md, CLAUDE.md, docs/PARITY.md and docs/DATA_MODEL.md. We are i
 | 0 | Mapping and contracts | 🟡 | Docs written (commit `53c12bd`), awaiting user approval |
 | 1 | 1:1 rewrite | 🟡 | Code done (2026-11-21). Next: first release to production with `docs/TABLET_CHECKLIST.md` |
 | 2 | Members and identity | ⬜ | |
-| 3 | Credits in expenses | ⬜ | |
+| 3 | Credits in expenses | 🟡 | Refunds + expense edit done 2026-11-23 (D27), released together with stage 1 |
 | 4 | Product catalog | ⬜ | |
 | 5 | Wallet and POS | ⬜ | |
 | 6 | NFC | ⬜ | |

@@ -44,6 +44,13 @@ export function bookingWarning(dateIso: string, periodStartIso: string, periodTi
     : '';
 }
 
+/** An expense can be edited only while it is active and belongs to the open month. '' = allowed. */
+export function expenseChangeError(voided: boolean, rowPeriodKey: string, openPeriodKey: string): string {
+  if (voided) return 'השורה בוטלה – אי אפשר לערוך אותה';
+  if (rowPeriodKey !== openPeriodKey) return 'החודש של השורה כבר נסגר – אי אפשר לערוך';
+  return '';
+}
+
 export interface ExpenseTotals { expensesAgorot: Agorot; creditsAgorot: Agorot; netAgorot: Agorot }
 
 export function expenseTotals(items: readonly { amountAgorot: Agorot; type: ExpenseType }[]): ExpenseTotals {

@@ -9,23 +9,34 @@
 
   /* ---------- server ---------- */
   function uid(){ return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,10); }
-  function api(action, payload, txId){
+  /** google.script.run can hang (tablet asleep, weak Wi-Fi), so every call gets a timeout.
+      A write that times out is retried by the user with the same clientTxId, so it can't be recorded twice. */
+  function api(action, payload, txId, timeoutMs){
     return new Promise(function(res, rej){
+      var done = false;
+      var timer = setTimeout(function(){
+        if (done) return; done = true;
+        var e = new Error('השרת לא ענה בזמן – בדוק את החיבור ונסה שוב'); e.code = 'TIMEOUT'; rej(e);
+      }, timeoutMs || 30000);
+      function finish(fn, v){ if (done) return; done = true; clearTimeout(timer); fn(v); }
       google.script.run
         .withSuccessHandler(function(r){
-          if (r && r.ok) return res(r.data);
+          if (r && r.ok) return finish(res, r.data);
           var e = new Error((r && r.error && r.error.message) || 'שגיאה לא ידועה');
           e.code = r && r.error && r.error.code;
-          rej(e);
+          finish(rej, e);
         })
-        .withFailureHandler(function(e){ rej(e && e.message ? e : new Error(String(e))); })
+        .withFailureHandler(function(e){ finish(rej, e && e.message ? e : new Error(String(e))); })
         .api({ action: action, payload: payload, auth: { pin: S.pin }, clientTxId: txId || uid() });
     });
   }
 
   /* ---------- utils ---------- */
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
-  function money(agorot){ return '₪' + Math.round((Number(agorot)||0)/100).toLocaleString('en-US'); }
+  function money(agorot){ // whole shekels as before; agorot shown only when there are any (₪123.50)
+    var a = Math.round(Number(agorot)||0);
+    return '₪' + (a/100).toLocaleString('en-US', { minimumFractionDigits: a % 100 ? 2 : 0, maximumFractionDigits: 2 });
+  }
   function norm(s){ return String(s||'').replace(/[֑-ׇ]/g,'').replace(/['"`׳״\-.]/g,'').replace(/\s+/g,' ').trim().toLowerCase(); }
   function store(k,v){ try{ if(v==null) localStorage.removeItem(k); else localStorage.setItem(k,v);}catch(e){} }
   function load(k){ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } }
@@ -41,24 +52,68 @@
   }
 
   /* ---------- init / pin ---------- */
+  /* Fast start: the last successful load is kept on the device and shown immediately,
+     then replaced by fresh data from the server. Every write still goes to the server. */
+  var CACHE_KEY = 'hasalik_init';
+  function saveCache(d){
+    store(CACHE_KEY, JSON.stringify({ role:d.role, pubName:d.pubName, period:d.period, cardTypes:d.cardTypes,
+      members:d.members, shift:d.shift, todos:d.todos, reportUrl:d.reportUrl }));
+  }
+  function loadCache(){ try { return JSON.parse(load(CACHE_KEY) || 'null'); } catch(e){ return null; } }
+  function shiftDay(){ // same rule as the server: before 08:00 belongs to the previous evening
+    var d = new Date(Date.now() - 8*3600*1000); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+    return d.toISOString().slice(0,10);
+  }
+
+  function apply(d){
+    var first = !S.data;
+    S.data = d;
+    var isAdmin = d.role === 'admin';
+    $('pubName').textContent = d.pubName;
+    $('periodTitle').textContent = d.period.title;
+    $('tabExp').classList.toggle('hidden', !isAdmin);
+    var sh = d.shift && d.shift.date === shiftDay() ? d.shift : { date: shiftDay(), cards: 0, amountAgorot: 0, recent: [] };
+    renderShift(sh);
+    if (!S.editing){ S.todos = d.todos || []; renderTodos(); }
+    if (isAdmin && d.expenses) renderExpenses(d.expenses);
+    if (isAdmin) $('reportLink').href = d.reportUrl || '#';
+    if ($('q').value) renderResults();
+    if (first){ show('vSell'); setTab('sell'); }
+  }
+
+  var loadTimer = null;
+  function loadingSlow(on){
+    clearTimeout(loadTimer);
+    $('loadMsg').textContent = on ? 'לוקח יותר זמן מהרגיל…' : 'רגע, מוזגים…';
+    $('loadRetry').classList.toggle('hidden', !on);
+    if (!on) loadTimer = setTimeout(function(){ loadingSlow(true); }, 8000);
+  }
+  $('loadRetry').onclick = function(){ loadingSlow(false); load_(1); };
+
   function init(){
-    show('vLoading');
-    api('session.init').then(function(d){
-      S.data = d;
-      var isAdmin = d.role === 'admin';
-      $('pubName').textContent = d.pubName;
-      $('periodTitle').textContent = d.period.title;
-      $('tabExp').classList.toggle('hidden', !isAdmin);
-      renderShift(d.shift);
-      S.todos = d.todos || []; renderTodos();
-      if (isAdmin){ renderExpenses(d.expenses); $('reportLink').href = d.reportUrl || '#'; }
-      show('vSell'); setTab('sell');
+    var cached = loadCache();
+    if (cached && !S.data) apply(cached);
+    else if (!S.data){ show('vLoading'); loadingSlow(false); }
+    load_(1);
+  }
+  function load_(attempt){
+    api('session.init', null, null, 25000).then(function(d){
+      clearTimeout(loadTimer);
+      apply(d); saveCache(d);
     }).catch(function(e){
       if (e.code === 'PIN_REQUIRED'){
+        clearTimeout(loadTimer);
+        store(CACHE_KEY, null); S.data = null;
         if (S.pin){ toast(errMsg(e),'bad'); store(PIN_KEY,null); S.pin=''; }
         show('vPin'); setTimeout(function(){ $('pinInput').focus(); },50);
+      } else if (attempt < 3 && e.code !== 'RATE_LIMITED' && e.code !== 'NOT_CONFIGURED'){
+        setTimeout(function(){ load_(attempt + 1); }, 1500 * attempt); // automatic retry
+      } else if (S.data){
+        toast('אין חיבור לשרת – מוצגים הנתונים האחרונים. ' + errMsg(e), 'bad');
       } else {
-        show('vPin'); toast(errMsg(e),'bad');
+        clearTimeout(loadTimer);
+        $('loadMsg').textContent = errMsg(e);
+        $('loadRetry').classList.remove('hidden');
       }
     });
   }
@@ -185,33 +240,71 @@
 
   /* ---------- expenses (admin) ---------- */
   function todayISO(){ var d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
+  S.exType = 'EXPENSE'; S.exEdit = null; S.exItems = [];
   function renderExpenses(st){
+    S.exItems = st.items;
     $('exListTitle').textContent = 'הוצאות ' + st.periodTitle;
     $('exTotal').textContent = money(st.netAgorot);
+    $('exSums').classList.toggle('hidden', !st.creditsAgorot);
+    $('exSums').innerHTML = '<span>הוצאות '+money(st.expensesAgorot)+'</span><span>זיכויים '+money(st.creditsAgorot)+'</span>';
     $('exList').innerHTML = st.items.length ? st.items.map(function(x){
-      return '<div class="row"><div class="main"><div class="t">'+esc(x.desc)+'</div><div class="s">'+esc(x.date)+'</div></div>'+
-        '<span class="amt">'+money(x.amountAgorot)+'</span><button class="undo" data-id="'+esc(x.id)+'">ביטול</button></div>';
+      var credit = x.type === 'CREDIT';
+      return '<div class="row'+(credit?' credit':'')+'"><div class="main"><div class="t">'+esc(x.desc)+(credit?'<span class="tag">זיכוי</span>':'')+'</div><div class="s">'+esc(x.date)+'</div></div>'+
+        '<span class="amt"'+(credit?' dir="ltr">−':'>')+money(x.amountAgorot)+'</span>'+
+        '<button class="mini" data-act="edit" data-id="'+esc(x.id)+'" aria-label="עריכה">✎</button>'+
+        '<button class="undo" data-id="'+esc(x.id)+'">ביטול</button></div>';
     }).join('') : '<div class="hint">אין הוצאות החודש</div>';
   }
+  function setExType(t){
+    S.exType = t === 'CREDIT' ? 'CREDIT' : 'EXPENSE';
+    Array.prototype.forEach.call($('exType').querySelectorAll('.chip'), function(c){ c.classList.toggle('on', c.dataset.type===S.exType); });
+  }
+  function exSaveLabel(){ return S.exEdit ? 'עדכון' : (S.exType==='CREDIT' ? 'שמירת זיכוי' : 'שמירת הוצאה'); }
+  function resetExForm(){
+    S.exEdit = null; S.exReqId = null;
+    $('exDesc').value=''; $('exAmount').value=''; $('exDate').value=todayISO(); setExType('EXPENSE');
+    $('exFormTitle').textContent = 'הוצאה חדשה'; $('exCancelEdit').classList.add('hidden'); $('exForm').classList.remove('editing');
+    $('exSave').textContent = exSaveLabel();
+  }
+  function startExEdit(x){
+    S.exEdit = x.id; S.exReqId = null;
+    $('exDesc').value = x.desc; $('exAmount').value = x.amountAgorot/100; $('exDate').value = x.dateIso || todayISO();
+    setExType(x.type);
+    $('exFormTitle').textContent = 'עריכת שורה'; $('exCancelEdit').classList.remove('hidden'); $('exForm').classList.add('editing');
+    $('exSave').textContent = exSaveLabel();
+    $('exForm').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+  $('exType').onclick = function(e){
+    var c = e.target.closest('.chip'); if(!c) return;
+    setExType(c.dataset.type); S.exReqId=null; $('exSave').textContent = exSaveLabel();
+  };
+  $('exCancelEdit').onclick = resetExForm;
   $('exSave').onclick = function(){
     var b=this, desc=$('exDesc').value.trim(), amount=Number($('exAmount').value), date=$('exDate').value;
     if(!desc){ toast('יש להזין פירוט','bad'); return; }
     if(!(amount>0)){ toast('יש להזין סכום','bad'); return; }
+    var payload = { desc:desc, amountAgorot:Math.round(amount*100), date:date, type:S.exType };
+    var editing = !!S.exEdit, credit = S.exType === 'CREDIT';
+    if (editing) payload.expenseId = S.exEdit;
     S.exReqId = S.exReqId || uid();
     b.disabled=true; b.textContent='שומר…';
-    api('expense.create', { desc:desc, amountAgorot:Math.round(amount*100), date:date }, S.exReqId).then(function(st){
-      renderExpenses(st); S.exReqId=null;
-      $('exDesc').value=''; $('exAmount').value=''; $('exDate').value=todayISO();
-      if (st.warning) toast(st.warning,'warn'); else toast('✓ ההוצאה נשמרה');
+    api(editing ? 'expense.update' : 'expense.create', payload, S.exReqId).then(function(st){
+      renderExpenses(st); resetExForm();
+      if (st.warning) toast(st.warning,'warn');
+      else toast(editing ? '✓ עודכן' : (credit ? '✓ הזיכוי נשמר' : '✓ ההוצאה נשמרה'));
     }).catch(function(e){ toast('לא נשמר: '+errMsg(e),'bad'); })
-      .then(function(){ b.disabled=false; b.textContent='שמירת הוצאה'; });
+      .then(function(){ b.disabled=false; b.textContent=exSaveLabel(); });
   };
   ['exDesc','exAmount','exDate'].forEach(function(id){ $(id).addEventListener('input', function(){ S.exReqId=null; }); });
   $('exList').onclick = function(e){
+    var ed = e.target.closest('[data-act="edit"]');
+    if (ed){ var x = S.exItems.find(function(i){ return i.id===ed.dataset.id; }); if (x) startExEdit(x); return; }
     var b=e.target.closest('.undo'); if(!b) return;
     twoTap(b, function(){
-      api('expense.void', { expenseId: b.dataset.id }).then(function(st){ renderExpenses(st); toast('ההוצאה בוטלה','warn'); })
-        .catch(function(err){ b.disabled=false; toast(errMsg(err),'bad'); });
+      api('expense.void', { expenseId: b.dataset.id }).then(function(st){
+        if (S.exEdit === b.dataset.id) resetExForm();
+        renderExpenses(st); toast('השורה בוטלה','warn');
+      }).catch(function(err){ b.disabled=false; toast(errMsg(err),'bad'); });
     });
   };
   $('reportRefresh').onclick = function(){
@@ -294,6 +387,7 @@
     }
   });
 
+  $('pinLogo').src = document.querySelector('.logo').src; // the logo is embedded once, in the header
   S.pin = load(PIN_KEY);
   init();
 })();
