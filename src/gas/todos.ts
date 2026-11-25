@@ -1,11 +1,12 @@
 import type { Todo } from '../shared/api';
 import { AppError } from '../core/errors';
-import { planShortage, validateShortageQty } from '../core/inventory';
+import { planShortage, restockDelta, validateShortageQty } from '../core/inventory';
 import { asText, cleanText, fromText } from '../core/text';
 import { alreadyDone, audit, markDone } from './audit';
 import type { Ctx } from './auth';
 import { addMissingHeaders, dataRows, findRow, sheetOrCreate, withLock } from './sheets';
 import { SHEETS, T, TODO_DELETED, TODO_DONE, TODO_HEADERS, TODO_OPEN } from './schema';
+import { restockItem } from './stock';
 import { fmt, toDate } from './util';
 
 let todoMemo: GoogleAppsScript.Spreadsheet.Sheet | null = null;
@@ -65,7 +66,13 @@ export function updateTodo(ctx: Ctx, p: { todoId: string; text?: string; done?: 
     const sh = todoSheetForWrite();
     const row = findRow(sh, cleanText(p.todoId, 80));
     if (!row) throw new AppError('NOT_FOUND', 'הפריט לא נמצא');
-    if (sh.getRange(row, T.STATUS + 1).getValue() === TODO_DELETED) throw new AppError('CONFLICT', 'מישהו אחר כבר מחק את הפריט');
+    const cur = sh.getRange(row, 1, 1, TODO_HEADERS.length).getValues()[0];
+    if (cur[T.STATUS] === TODO_DELETED) throw new AppError('CONFLICT', 'מישהו אחר כבר מחק את הפריט');
+    // ticking "נקנה" on a line from the inventory restocks the item (D30); only when the status really changes
+    if (p.done !== undefined && p.done !== null) {
+      const delta = restockDelta(cur[T.STATUS] === TODO_DONE, !!p.done, fromText(cur[T.ITEM_ID]), qtyGiven ? qty : qtyOf(cur[T.QTY]));
+      if (delta) restockItem(ctx, fromText(cur[T.ITEM_ID]), delta);
+    }
     if (p.text !== undefined && p.text !== null) {
       const text = cleanText(p.text, 120);
       if (!text) throw new AppError('VALIDATION', 'הפריט לא יכול להיות ריק');

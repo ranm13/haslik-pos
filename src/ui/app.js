@@ -395,7 +395,10 @@
     var item = (S.todos||[]).find(function(x){return x.id===id;});
     if (act==='tick' && item){
       item.done = !item.done; renderTodos(); // instant on screen
-      todoCall('todo.update', { todoId:id, done:item.done });
+      var q = todoQty(item), restock = !!item.itemId && q > 0; // a line from the inventory restocks it (D30)
+      todoCall('todo.update', { todoId:id, done:item.done },
+        restock ? (item.done ? '✓ נוסף למלאי: '+item.text+' +'+q : 'הוחזר: '+item.text+' −'+q+' מהמלאי') : null)
+        .then(function(){ if (restock) refreshInv(); });
     } else if (act==='qinc' && item){ setTodoQty(id, (todoQty(item) || 0) + 1); }
     else if (act==='qdec' && item){ var q = todoQty(item); if (q > 1) setTodoQty(id, q - 1); else toast('למחיקת השורה – "מחיקה"','warn'); }
     else if (act==='edit'){ S.editing=id; renderTodos(); }

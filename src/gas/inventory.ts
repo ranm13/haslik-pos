@@ -8,12 +8,11 @@ import { shortageDelta, validateAmount, validateItemName } from '../core/invento
 import { asText, cleanText, fromText } from '../core/text';
 import { alreadyDone, audit, markDone } from './audit';
 import type { Ctx } from './auth';
-import { dataRows, findRow, sheetOrCreate, withLock } from './sheets';
-import { ACTIVE, I, INVENTORY_HEADERS, ITEM_DELETED, SHEETS } from './schema';
+import { dataRows, findRow, withLock } from './sheets';
+import { invSheet } from './stock';
+import { ACTIVE, I, INVENTORY_HEADERS, ITEM_DELETED } from './schema';
 import { addShortageForItem, getTodos } from './todos';
 import { heCompare } from './util';
-
-const invSheet = () => sheetOrCreate(SHEETS.INVENTORY, INVENTORY_HEADERS, [I.AMOUNT], { 5: 'dd/MM/yyyy HH:mm', 6: 'dd/MM/yyyy HH:mm' });
 
 export function getInventory(): InventoryItem[] {
   return dataRows(invSheet(), INVENTORY_HEADERS.length)

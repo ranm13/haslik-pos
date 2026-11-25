@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { planShortage, shortageDelta, validateAmount, validateItemName, validateShortageQty } from '../src/core/inventory';
+import { applyRestock, planShortage, restockDelta, shortageDelta, validateAmount, validateItemName, validateShortageQty } from '../src/core/inventory';
+
+describe('I3 ticking "נקנה" restocks the item', () => {
+  it('open → bought adds the amount, bought → open takes it back', () => {
+    expect(restockDelta(false, true, 'i1', 6)).toBe(6);
+    expect(restockDelta(true, false, 'i1', 6)).toBe(-6);
+  });
+  it('no change: same status (retry), manual line, or no amount', () => {
+    expect(restockDelta(true, true, 'i1', 6)).toBe(0);
+    expect(restockDelta(false, true, '', 6)).toBe(0);
+    expect(restockDelta(false, true, 'i1', null)).toBe(0);
+  });
+  it('taking back never goes below 0', () => {
+    expect(applyRestock(2, -6)).toBe(0);
+    expect(applyRestock(2, 6)).toBe(8);
+  });
+});
 
 describe('I1 inventory input', () => {
   it('amount: whole number 0…100,000', () => {

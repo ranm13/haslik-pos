@@ -55,7 +55,7 @@ Every write action takes `clientTxId`. Inside the script lock the server checks 
 | `report.refresh` | admin | – | `{url}` |
 | `todo.list` | bar | – | `Todo[]` |
 | `todo.create` | bar | `{text, qty?}` (qty = amount to buy, optional) | `Todo[]` |
-| `todo.update` | bar | `{todoId, text?, done?, qty?}` (qty null = clear) | `Todo[]` |
+| `todo.update` | bar | `{todoId, text?, done?, qty?}` (qty null = clear). Ticking `done` on a line from the inventory adds its amount back to the item; unticking takes it off (D30) | `Todo[]` |
 | `todo.delete` | bar | `{todoId}` | `Todo[]` |
 | `inventory.list` | bar | – | `InventoryItem[]` |
 | `inventory.create` | bar | `{name, amount}` | `{inventory, todos}` |

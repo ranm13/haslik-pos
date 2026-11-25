@@ -36,6 +36,20 @@ export function shortageDelta(before: number, after: number): number {
   return after < before ? before - after : 0;
 }
 
+/**
+ * Ticking a shortage line "נקנה" restocks its inventory item (D30): open → bought adds the line's amount,
+ * bought → open (a mistaken tick) takes it back. Lines without an item or an amount don't touch inventory.
+ */
+export function restockDelta(wasDone: boolean, nowDone: boolean, itemId: string, qty: number | null): number {
+  if (!itemId || !qty || wasDone === nowDone) return 0;
+  return nowDone ? qty : -qty;
+}
+
+/** New amount after a restock change; never below 0. */
+export function applyRestock(amount: number, delta: number): number {
+  return Math.max(0, amount + delta);
+}
+
 export type ShortagePlan =
   | { kind: 'none' }
   | { kind: 'create'; qty: number }
