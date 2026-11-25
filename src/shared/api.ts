@@ -93,7 +93,7 @@ export interface InitData {
   version: string;
   period: Period;
   cardTypes: CardType[];
-  members: Member[];
+  members?: Member[]; // omitted when the page asked withMembers:false
   shift: ShiftState;
   todos: Todo[];
   expenses?: ExpensesState;
@@ -114,7 +114,7 @@ export interface SyncResult { added: number; deactivated: number; renamed: numbe
 
 /** Stage 1 actions. Later stages add theirs here (members sync: stage 2, products: stage 4). */
 export interface ActionMap {
-  'session.init': { payload: void; result: InitData };
+  'session.init': { payload: { withMembers?: boolean } | void; result: InitData }; // withMembers:false = the page already has this shift's list
   'members.list': { payload: void; result: Member[] };
   'shift.get': { payload: void; result: ShiftState };
   'sale.create': { payload: SaleInput; result: ShiftState };

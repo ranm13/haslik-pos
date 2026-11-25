@@ -15,7 +15,7 @@ type Handler<A extends ActionName> = (ctx: Ctx, payload: ActionMap[A]['payload']
 export type Handlers = { [A in ActionName]?: Handler<A> };
 
 const handlers: Handlers = {
-  'session.init': ctx => {
+  'session.init': (ctx, opts) => {
     const p = requireOpenPeriod();
     const data: InitData = {
       role: ctx.role,
@@ -23,7 +23,7 @@ const handlers: Handlers = {
       version: VERSION,
       period: periodDto(p),
       cardTypes: getCardTypes(false).map(({ name, priceAgorot }) => ({ name, priceAgorot })),
-      members: membersForClient(false),
+      members: opts && opts.withMembers === false ? undefined : membersForClient(false),
       shift: getShiftState(ctx.role),
       todos: getTodos(),
       ...initExtras(ctx),

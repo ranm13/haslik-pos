@@ -57,9 +57,16 @@
   var CACHE_KEY = 'hasalik_init';
   function saveCache(d){
     store(CACHE_KEY, JSON.stringify({ role:d.role, pubName:d.pubName, period:d.period, cardTypes:d.cardTypes,
-      members:d.members, shift:d.shift, todos:d.todos, reportUrl:d.reportUrl }));
+      shift:d.shift, todos:d.todos, reportUrl:d.reportUrl }));
   }
   function loadCache(){ try { return JSON.parse(load(CACHE_KEY) || 'null'); } catch(e){ return null; } }
+
+  /* Members list: changes at most weekly, so it is fetched once per shift and kept on the device.
+     Within the same shift the server is not asked for it at all; ↻ forces a fresh copy. */
+  var MEMBERS_KEY = 'hasalik_members';
+  function saveMembers(list){ store(MEMBERS_KEY, JSON.stringify({ day: shiftDay(), list: list })); }
+  function storedMembers(){ try { return JSON.parse(load(MEMBERS_KEY) || 'null'); } catch(e){ return null; } }
+  function shiftMembers(){ var m = storedMembers(); return m && m.day === shiftDay() && m.list && m.list.length ? m.list : null; }
   function shiftDay(){ // same rule as the server: before 08:00 belongs to the previous evening
     var d = new Date(Date.now() - 8*3600*1000); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
     return d.toISOString().slice(0,10);
@@ -92,18 +99,21 @@
 
   function init(){
     var cached = loadCache();
-    if (cached && !S.data) apply(cached);
+    if (cached && !S.data){ var m = storedMembers(); cached.members = (m && m.list) || []; apply(cached); }
     else if (!S.data){ show('vLoading'); loadingSlow(false); }
     load_(1);
   }
   function load_(attempt){
-    api('session.init', null, null, 25000).then(function(d){
+    var known = shiftMembers();
+    api('session.init', { withMembers: !known }, null, 25000).then(function(d){
       clearTimeout(loadTimer);
+      if (d.members) saveMembers(d.members);
+      else d.members = known || (S.data && S.data.members) || [];
       apply(d); saveCache(d);
     }).catch(function(e){
       if (e.code === 'PIN_REQUIRED'){
         clearTimeout(loadTimer);
-        store(CACHE_KEY, null); S.data = null;
+        store(CACHE_KEY, null); store(MEMBERS_KEY, null); S.data = null;
         if (S.pin){ toast(errMsg(e),'bad'); store(PIN_KEY,null); S.pin=''; }
         show('vPin'); setTimeout(function(){ $('pinInput').focus(); },50);
       } else if (attempt < 3 && e.code !== 'RATE_LIMITED' && e.code !== 'NOT_CONFIGURED'){
@@ -153,7 +163,7 @@
   };
   $('refreshMembers').onclick = function(){
     var b=this; b.disabled=true;
-    api('members.list').then(function(list){ S.data.members=list; renderResults(); toast('הרשימה עודכנה ('+list.length+')'); })
+    api('members.list').then(function(list){ S.data.members=list; saveMembers(list); renderResults(); toast('הרשימה עודכנה ('+list.length+')'); })
       .catch(function(e){ toast(errMsg(e),'bad'); }).then(function(){ b.disabled=false; });
   };
   $('guestBtn').onclick = function(){ openSheet(null); };
