@@ -11,7 +11,7 @@ import { appendOpenPeriod, getOpenPeriod, getPeriodByKey, type PeriodRow } from 
 import { buildReport, emailReport, lockReport } from './report';
 import { ensureSheet, resetSsMemo, sheet, ss, withLock } from './sheets';
 import {
-  AUDIT_HEADERS, CLOSED, E, EXPENSE_HEADERS, P, PERIOD_HEADERS, S, SALES_HEADERS, SHEETS,
+  AUDIT_HEADERS, CLOSED, E, EXPENSE_HEADERS, I, INVENTORY_HEADERS, P, PERIOD_HEADERS, S, SALES_HEADERS, SHEETS,
   TODO_HEADERS, TYPES_HEADERS,
 } from './schema';
 import { schemaExtensions } from './extensions';
@@ -50,6 +50,7 @@ export function setup(): string[] {
   ensureSheet(SHEETS.PERIODS, PERIOD_HEADERS, [], { 3: 'dd/MM/yyyy HH:mm', 4: 'dd/MM/yyyy HH:mm' });
   ensureSheet(SHEETS.TODO, TODO_HEADERS, [], { 4: 'dd/MM/yyyy HH:mm', 6: 'dd/MM/yyyy HH:mm' });
   ensureSheet(SHEETS.AUDIT, AUDIT_HEADERS, [], { 1: 'dd/MM/yyyy HH:mm:ss' });
+  ensureSheet(SHEETS.INVENTORY, INVENTORY_HEADERS, [I.AMOUNT], { 5: 'dd/MM/yyyy HH:mm', 6: 'dd/MM/yyyy HH:mm' });
   log.push(...schemaExtensions());
   ['Sheet1', 'גיליון1', 'גיליון 1'].forEach(n => {
     const sh = book.getSheetByName(n);

@@ -278,5 +278,5 @@ Read docs/ROADMAP.md, CLAUDE.md, docs/PARITY.md and docs/DATA_MODEL.md. We are i
 | 4 | Product catalog | ⬜ | |
 | 5 | Wallet and POS | ⬜ | |
 | 6 | NFC | ⬜ | |
-| 7 | Full stock management | ⬜ | |
+| 7 | Full stock management | 🟡 | Simple inventory done 2026-11-25 (D29): manual amounts, decreases feed חוסרים. Not yet: link to POS sales, receiving goods, stock count |
 | 8 | Hardening | ⬜ | |

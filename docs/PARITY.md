@@ -16,7 +16,7 @@ Status: ✅ done · ⏳ planned · 🔁 changed · ❌ dropped (with reason)
 | 8 | Undo: bar ≤30 min, admin any time in open month, never closed month | 1 | Kept unchanged (status change on the legacy sheet). The ledger rules (REVERSAL, "no later action on member") come with the wallet in stage 5 | ⏳ |
 | 9 | Expenses: add (desc, amount, date), void, list, total | 1 → 3 | Kept; plus **edit** and **refunds** (type הוצאה/זיכוי, total = net), added 2026-11-23 (D27) | ⏳ |
 | 10 | Expense dated in closed month → booked to open month + warning | 1 | Kept | ⏳ |
-| 11 | Shortages list: add / tick / edit / delete (soft) | 1 → 7 | Kept as-is until stage 7 (computed shortages) | ⏳ |
+| 11 | Shortages list: add / tick / edit / delete (soft) | 1 → 7 | Kept; plus an **amount to buy** per line (+/−, optional on manual lines), and automatic lines from inventory decreases (D29) | ⏳ |
 | 12 | Monthly periods, auto close on last day 08:00, overdue close | 1 | Kept (server trigger) | ⏳ |
 | 13 | Monthly report file (income/expenses/summary), draft refreshed daily | 1 → 3 → 5 | Kept; refunds appear in the expenses tab as negative "זיכוי:" lines, so its total and the summary are net (D27); stage 5 replaces card income with top-ups | ⏳ |
 | 14 | Lock closed report, email with HTML + PDF to admin | 1 | Kept | ⏳ |
@@ -31,3 +31,4 @@ Status: ✅ done · ⏳ planned · 🔁 changed · ❌ dropped (with reason)
 | 23 | Refresh shift when app regains focus | 1 | Kept | ⏳ |
 | 24 | Formula-injection protection (`'` prefix) | 1 | Kept | ⏳ |
 | 25 | Global PIN lockout after 15 failures | 1 | Kept unchanged (D23) | ⏳ |
+| 26 | – (new) Inventory: items with amounts, add / delete / change amount | 7 | New (D29): every decrease adds the same amount to the shortages list | ⏳ |

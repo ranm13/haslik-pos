@@ -54,9 +54,13 @@ Every write action takes `clientTxId`. Inside the script lock the server checks 
 | `expense.void` | admin | `{expenseId}` | `ExpensesState` |
 | `report.refresh` | admin | – | `{url}` |
 | `todo.list` | bar | – | `Todo[]` |
-| `todo.create` | bar | `{text}` | `Todo[]` |
-| `todo.update` | bar | `{todoId, text?, done?}` | `Todo[]` |
+| `todo.create` | bar | `{text, qty?}` (qty = amount to buy, optional) | `Todo[]` |
+| `todo.update` | bar | `{todoId, text?, done?, qty?}` (qty null = clear) | `Todo[]` |
 | `todo.delete` | bar | `{todoId}` | `Todo[]` |
+| `inventory.list` | bar | – | `InventoryItem[]` |
+| `inventory.create` | bar | `{name, amount}` | `{inventory, todos}` |
+| `inventory.setAmount` | bar | `{itemId, amount}` – the new **absolute** amount; a decrease of N adds N to the item's open shortage line (or a new line) in the same lock, so a retry adds nothing | `{inventory, todos}` |
+| `inventory.delete` | bar | `{itemId}` – soft delete | `{inventory, todos}` |
 
 Before stage 2, `Member.id` is the legacy name key (`last|first`). Admin-only actions are refused with `FORBIDDEN` for the bar PIN.
 

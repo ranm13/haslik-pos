@@ -47,7 +47,7 @@
   }
   function errMsg(e){ var m=(e&&e.message)||String(e); return m.replace(/^Exception:\s*/,''); }
   function show(view){
-    ['vLoading','vPin','vSell','vTodo','vExp'].forEach(function(v){ $(v).classList.toggle('hidden', v!==view); });
+    ['vLoading','vPin','vSell','vInv','vTodo','vExp'].forEach(function(v){ $(v).classList.toggle('hidden', v!==view); });
     $('hdr').classList.toggle('hidden', view==='vLoading'||view==='vPin');
   }
 
@@ -57,7 +57,7 @@
   var CACHE_KEY = 'hasalik_init';
   function saveCache(d){
     store(CACHE_KEY, JSON.stringify({ role:d.role, pubName:d.pubName, period:d.period, cardTypes:d.cardTypes,
-      shift:d.shift, todos:d.todos, reportUrl:d.reportUrl }));
+      shift:d.shift, todos:d.todos, inventory:d.inventory, reportUrl:d.reportUrl }));
   }
   function loadCache(){ try { return JSON.parse(load(CACHE_KEY) || 'null'); } catch(e){ return null; } }
 
@@ -82,6 +82,7 @@
     var sh = d.shift && d.shift.date === shiftDay() ? d.shift : { date: shiftDay(), cards: 0, amountAgorot: 0, recent: [] };
     renderShift(sh);
     if (!S.editing){ S.todos = d.todos || []; renderTodos(); }
+    S.inv = d.inventory || []; renderInv();
     if (isAdmin && d.expenses) renderExpenses(d.expenses);
     if (isAdmin) $('reportLink').href = d.reportUrl || '#';
     if ($('q').value) renderResults();
@@ -134,9 +135,10 @@
   function setTab(v){
     Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){ b.classList.toggle('on', b.dataset.view===v); });
     S.tab = v;
-    show({ sell:'vSell', todo:'vTodo', exp:'vExp' }[v] || 'vSell');
+    show({ sell:'vSell', inv:'vInv', todo:'vTodo', exp:'vExp' }[v] || 'vSell');
     if (v==='exp' && !$('exDate').value) $('exDate').value = todayISO();
     if (v==='todo') refreshTodos();
+    if (v==='inv') refreshInv();
   }
   Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){ b.onclick=function(){ setTab(b.dataset.view); }; });
 
@@ -329,11 +331,28 @@
       return '<div class="row todo" data-id="'+esc(x.id)+'"><div class="main"><input class="editin" id="tdEdit" maxlength="120" value="'+esc(x.text)+'"></div>'+
         '<button class="mini" data-act="save">שמירה</button><button class="mini" data-act="cancel">ביטול</button></div>';
     }
+    var q = todoQty(x);
     return '<div class="row todo'+(x.done?' done':'')+'" data-id="'+esc(x.id)+'">'+
       '<button class="tick" data-act="tick" aria-label="'+(x.done?'החזר לחסר':'סמן שנקנה')+'">'+(x.done?'✓':'')+'</button>'+
-      '<div class="main"><div class="t">'+esc(x.text)+'</div><div class="s">נוסף '+esc(x.date)+'</div></div>'+
+      '<div class="main"><div class="t">'+esc(x.text)+(x.done && q ? '<span class="qtybadge">×'+q+'</span>' : '')+'</div>'+
+      '<div class="s">נוסף '+esc(x.date)+(x.itemId?' · מהמלאי':'')+'</div></div>'+
+      (x.done?'':'<div class="qtyctl"><button class="mini" data-act="qdec" aria-label="פחות">−</button><span class="qtyval">'+(q || '–')+'</span><button class="mini" data-act="qinc" aria-label="יותר">+</button></div>')+
       (x.done?'':'<button class="mini" data-act="edit" aria-label="עריכה">✎</button>')+
       '<button class="undo" data-act="del">מחיקה</button></div>';
+  }
+  /* shortage amounts: changed locally at once, sent after a short pause (only the last value is sent) */
+  S.todoQtyPending = {}; var todoQtyTimers = {};
+  function todoQty(x){ return x.id in S.todoQtyPending ? S.todoQtyPending[x.id] : x.qty; }
+  function setTodoQty(id, q){
+    S.todoQtyPending[id] = q; renderTodos();
+    clearTimeout(todoQtyTimers[id]);
+    todoQtyTimers[id] = setTimeout(function(){
+      var sent = S.todoQtyPending[id];
+      api('todo.update', { todoId:id, qty:sent }).then(function(list){
+        if (S.todoQtyPending[id] === sent) delete S.todoQtyPending[id];
+        S.todos = list; if (!S.editing) renderTodos();
+      }).catch(function(e){ delete S.todoQtyPending[id]; toast(errMsg(e),'bad'); refreshTodos(); });
+    }, 600);
   }
   function renderTodos(){
     var list = S.todos || [], open = list.filter(function(x){return !x.done;}), done = list.filter(function(x){return x.done;});
@@ -351,15 +370,18 @@
   }
   function addTodo(){
     var text = $('tdNew').value.trim(); if(!text){ $('tdNew').focus(); return; }
+    var qs = $('tdQty').value.trim(), qty = qs === '' ? null : Number(qs);
+    if (qty !== null && !(qty >= 1 && Math.floor(qty) === qty)){ toast('כמות לא תקינה','bad'); return; }
     var b=$('tdAdd'); b.disabled=true;
     S.tdReq = S.tdReq || uid();
-    api('todo.create', { text:text }, S.tdReq).then(function(list){
-      S.tdReq=null; $('tdNew').value=''; S.todos=list; renderTodos(); toast('✓ נוסף לרשימה');
+    api('todo.create', { text:text, qty:qty }, S.tdReq).then(function(list){
+      S.tdReq=null; $('tdNew').value=''; $('tdQty').value=''; S.todos=list; renderTodos(); toast('✓ נוסף לרשימה');
     }).catch(function(e){ toast('לא נשמר: '+errMsg(e),'bad'); }).then(function(){ b.disabled=false; $('tdNew').focus(); });
   }
   $('tdAdd').onclick = addTodo;
   $('tdNew').onkeydown = function(e){ if(e.key==='Enter') addTodo(); };
-  $('tdNew').oninput = function(){ S.tdReq=null; };
+  $('tdQty').onkeydown = function(e){ if(e.key==='Enter') addTodo(); };
+  $('tdNew').oninput = $('tdQty').oninput = function(){ S.tdReq=null; };
   function saveEdit(id){
     var v = $('tdEdit').value.trim(); if(!v){ toast('הפריט לא יכול להיות ריק','bad'); return; }
     var item = S.todos.find(function(x){return x.id===id;}); S.editing=null;
@@ -374,7 +396,9 @@
     if (act==='tick' && item){
       item.done = !item.done; renderTodos(); // instant on screen
       todoCall('todo.update', { todoId:id, done:item.done });
-    } else if (act==='edit'){ S.editing=id; renderTodos(); }
+    } else if (act==='qinc' && item){ setTodoQty(id, (todoQty(item) || 0) + 1); }
+    else if (act==='qdec' && item){ var q = todoQty(item); if (q > 1) setTodoQty(id, q - 1); else toast('למחיקת השורה – "מחיקה"','warn'); }
+    else if (act==='edit'){ S.editing=id; renderTodos(); }
     else if (act==='cancel'){ S.editing=null; renderTodos(); }
     else if (act==='save'){ saveEdit(id); }
     else if (act==='del'){
@@ -389,11 +413,86 @@
     if (e.key==='Escape'){ S.editing=null; renderTodos(); }
   });
 
+  /* ---------- inventory (מלאי) ---------- */
+  /* Amounts change on screen at once and are sent after a short pause, as the new ABSOLUTE amount,
+     so a retry can never double-count. A decrease is added to חוסרים by the server in the same action. */
+  S.inv = []; S.invPending = {}; var invTimers = {};
+  function itemAmount(it){ return it.id in S.invPending ? S.invPending[it.id] : it.amount; }
+  function renderInv(){
+    var list = S.inv || [];
+    $('invList').innerHTML = list.length ? list.map(function(it){
+      var a = itemAmount(it);
+      return '<div class="row inv" data-id="'+esc(it.id)+'"><div class="main"><div class="t">'+esc(it.name)+'</div></div>'+
+        '<div class="qtyctl"><button class="mini" data-act="dec" aria-label="פחות">−</button>'+
+        '<input class="qtyval'+(a===0?' zero':'')+'" type="number" inputmode="numeric" min="0" step="1" value="'+a+'" aria-label="כמות">'+
+        '<button class="mini" data-act="inc" aria-label="יותר">+</button></div>'+
+        '<button class="undo" data-act="del">מחיקה</button></div>';
+    }).join('') : '<div class="hint">המלאי ריק – הוסף פריט למעלה</div>';
+  }
+  function invResult(r){
+    S.inv = r.inventory; renderInv();
+    S.todos = r.todos; if (!S.editing) renderTodos();
+  }
+  function refreshInv(){
+    api('inventory.list').then(function(list){ S.inv = list; renderInv(); }).catch(function(){});
+  }
+  function setItemLocal(row, id, v){
+    var inp = row.querySelector('input.qtyval'); inp.value = v; inp.classList.toggle('zero', v === 0);
+    S.invPending[id] = v;
+    clearTimeout(invTimers[id]);
+    invTimers[id] = setTimeout(function(){ commitAmount(id); }, 700);
+  }
+  function commitAmount(id){
+    var it = S.inv.find(function(x){ return x.id===id; }); if (!it) return;
+    var sent = S.invPending[id], before = it.amount;
+    api('inventory.setAmount', { itemId:id, amount:sent }).then(function(r){
+      if (S.invPending[id] === sent) delete S.invPending[id];
+      invResult(r);
+      if (before > sent) toast('נוסף לחוסרים: '+it.name+' ×'+(before-sent));
+    }).catch(function(e){ delete S.invPending[id]; toast('לא נשמר: '+errMsg(e),'bad'); refreshInv(); });
+  }
+  $('invList').onclick = function(e){
+    var b = e.target.closest('[data-act]'); if(!b) return;
+    var row = b.closest('.inv'), id = row.dataset.id;
+    var it = S.inv.find(function(x){ return x.id===id; }); if(!it) return;
+    var a = itemAmount(it), act = b.dataset.act;
+    if (act==='dec'){ if (a > 0) setItemLocal(row, id, a - 1); }
+    else if (act==='inc'){ setItemLocal(row, id, a + 1); }
+    else if (act==='del'){
+      twoTap(b, function(){
+        clearTimeout(invTimers[id]); delete S.invPending[id];
+        api('inventory.delete', { itemId:id }).then(function(r){ invResult(r); toast('הפריט נמחק','warn'); })
+          .catch(function(err){ b.disabled=false; toast(errMsg(err),'bad'); });
+      });
+    }
+  };
+  $('invList').addEventListener('change', function(e){
+    var inp = e.target.closest('input.qtyval'); if(!inp) return;
+    var row = inp.closest('.inv'), v = Number(inp.value);
+    if (!(v >= 0 && Math.floor(v) === v)){ toast('כמות לא תקינה','bad'); renderInv(); return; }
+    setItemLocal(row, row.dataset.id, v);
+  });
+  function addItem(){
+    var name = $('invName').value.trim(), as = $('invAmount').value.trim(), a = as === '' ? 0 : Number(as);
+    if (!name){ $('invName').focus(); return; }
+    if (!(a >= 0 && Math.floor(a) === a)){ toast('כמות לא תקינה','bad'); return; }
+    var b = $('invAdd'); b.disabled = true;
+    S.invReq = S.invReq || uid();
+    api('inventory.create', { name:name, amount:a }, S.invReq).then(function(r){
+      S.invReq = null; $('invName').value=''; $('invAmount').value=''; invResult(r); toast('✓ נוסף למלאי');
+    }).catch(function(e){ toast('לא נשמר: '+errMsg(e),'bad'); }).then(function(){ b.disabled=false; $('invName').focus(); });
+  }
+  $('invAdd').onclick = addItem;
+  $('invName').onkeydown = function(e){ if(e.key==='Enter') $('invAmount').focus(); };
+  $('invAmount').onkeydown = function(e){ if(e.key==='Enter') addItem(); };
+  $('invName').oninput = $('invAmount').oninput = function(){ S.invReq=null; };
+
   // refresh the shift summary when the app comes back to the foreground
   document.addEventListener('visibilitychange', function(){
     if (document.visibilityState==='visible' && S.data){
       api('shift.get').then(renderShift).catch(function(){});
       if (S.tab==='todo') refreshTodos();
+      if (S.tab==='inv') refreshInv();
     }
   });
 

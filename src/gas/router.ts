@@ -9,6 +9,7 @@ import { periodDto, requireOpenPeriod } from './periods';
 import { buildReport } from './report';
 import { createSale, getCardTypes, getShiftState, voidSale } from './sales';
 import { createTodo, deleteTodo, getTodos, updateTodo } from './todos';
+import { createItem, deleteItem, getInventory, setItemAmount } from './inventory';
 import { extraHandlers, initExtras } from './handlers-ext';
 
 type Handler<A extends ActionName> = (ctx: Ctx, payload: ActionMap[A]['payload'], req: ApiRequest) => ActionMap[A]['result'];
@@ -26,6 +27,7 @@ const handlers: Handlers = {
       members: opts && opts.withMembers === false ? undefined : membersForClient(false),
       shift: getShiftState(ctx.role),
       todos: getTodos(),
+      inventory: getInventory(),
       ...initExtras(ctx),
     };
     if (ctx.role === 'admin') {
@@ -48,9 +50,13 @@ const handlers: Handlers = {
     return { url: requireOpenPeriod().reportUrl };
   },
   'todo.list': () => getTodos(),
-  'todo.create': (ctx, p) => createTodo(ctx, p?.text),
+  'todo.create': (ctx, p) => createTodo(ctx, p?.text as string, p?.qty),
   'todo.update': (ctx, p) => updateTodo(ctx, p),
   'todo.delete': (ctx, p) => deleteTodo(ctx, p?.todoId),
+  'inventory.list': () => getInventory(),
+  'inventory.create': (ctx, p) => createItem(ctx, p),
+  'inventory.setAmount': (ctx, p) => setItemAmount(ctx, p),
+  'inventory.delete': (ctx, p) => deleteItem(ctx, p?.itemId),
   ...extraHandlers,
 };
 

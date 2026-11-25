@@ -72,7 +72,11 @@ export interface ExpensesState {
   warning?: string;
 }
 
-export interface Todo { id: string; text: string; done: boolean; date: string }
+export interface Todo { id: string; text: string; done: boolean; date: string; qty: number | null /* amount to buy */; itemId: string /* inventory item, '' for manual lines */ }
+
+export interface InventoryItem { id: string; name: string; amount: number }
+/** Inventory writes return both lists: a decrease also changes the shortages list. */
+export interface InventoryResult { inventory: InventoryItem[]; todos: Todo[] }
 
 export interface Product {
   productId: string;
@@ -96,6 +100,7 @@ export interface InitData {
   members?: Member[]; // omitted when the page asked withMembers:false
   shift: ShiftState;
   todos: Todo[];
+  inventory: InventoryItem[];
   expenses?: ExpensesState;
   reportUrl?: string;
 }
@@ -125,9 +130,13 @@ export interface ActionMap {
   'expense.update': { payload: ExpenseInput & { expenseId: string }; result: ExpensesState };
   'report.refresh': { payload: void; result: { url: string } };
   'todo.list': { payload: void; result: Todo[] };
-  'todo.create': { payload: { text: string }; result: Todo[] };
-  'todo.update': { payload: { todoId: string; text?: string; done?: boolean }; result: Todo[] };
+  'todo.create': { payload: { text: string; qty?: number | null }; result: Todo[] };
+  'todo.update': { payload: { todoId: string; text?: string; done?: boolean; qty?: number | null }; result: Todo[] };
   'todo.delete': { payload: { todoId: string }; result: Todo[] };
+  'inventory.list': { payload: void; result: InventoryItem[] };
+  'inventory.create': { payload: { name: string; amount: number }; result: InventoryResult };
+  'inventory.setAmount': { payload: { itemId: string; amount: number }; result: InventoryResult };
+  'inventory.delete': { payload: { itemId: string }; result: InventoryResult };
 }
 export type ActionName = keyof ActionMap;
 
